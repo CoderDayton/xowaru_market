@@ -1,0 +1,3 @@
+local AFKPointUtils = {}
+
+return AFKPointUtils

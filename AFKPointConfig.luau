@@ -1,0 +1,3 @@
+local AFKPointConfig = {}
+
+return AFKPointConfig
