@@ -16,50 +16,50 @@ local CurrentShardBalance = 0
 -- ====== Request Functions ======
 
 function RequestSpend(amount)
-    ShardSpendRequest:Fire(amount)
+	ShardSpendRequest:Fire(amount)
 end
 
 function ClaimBonus(action)
-    ShardBonusRequest:Fire(action)
+	ShardBonusRequest:Fire(action)
 end
 
 function ClaimMinigameReward()
-    ShardMinigameRequest:Fire()
+	ShardMinigameRequest:Fire()
 end
 
 -- ====== Response Handlers ======
 
 ShardSpendResult:Connect(function(success, newBalance, err)
-    if success then
-        print("[SPEND] Success! New shards:", newBalance)
-    else
-        warn("[SPEND] Failed:", err or "Unknown error")
-    end
+	if success then
+		print("[SPEND] Success! New shards:", newBalance)
+	else
+		warn("[SPEND] Failed:", err or "Unknown error")
+	end
 end)
 
 ShardBonusResult:Connect(function(success, newBalance, message)
-    if success then
-        print("[BONUS] Claimed! New shards:", newBalance)
-    else
-        warn("[BONUS] Failed:", message or "Unknown error")
-    end
+	if success then
+		print("[BONUS] Claimed! New shards:", newBalance)
+	else
+		warn("[BONUS] Failed:", message or "Unknown error")
+	end
 end)
 
 ShardMinigameResult:Connect(function(success, newBalance)
-    if success then
-        print("[MINIGAME] Reward received! New shards:", newBalance)
-    else
-        warn("[MINIGAME] Failed to award minigame reward.")
-    end
+	if success then
+		print("[MINIGAME] Reward received! New shards:", newBalance)
+	else
+		warn("[MINIGAME] Failed to award minigame reward.")
+	end
 end)
 
 -- ====== Live Balance Sync ======
 ShardUpdateSignal:Connect(function(newBalance)
-    CurrentShardBalance = newBalance or CurrentShardBalance
-    print("[SYNC] Shard balance updated:", CurrentShardBalance)
-    -- Update your UI here!
+	CurrentShardBalance = newBalance or CurrentShardBalance
+	print("[SYNC] Shard balance updated:", CurrentShardBalance)
+	-- Update your UI here!
 end)
 
 return {
-    CurrentShardBalance = function() return CurrentShardBalance end,
+	CurrentShardBalance = function() return CurrentShardBalance end,
 }
