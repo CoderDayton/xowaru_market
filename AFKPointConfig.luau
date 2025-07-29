@@ -2,6 +2,7 @@ local AFKPointConfig = {
 	ShardInterval = 3,      -- seconds between shard awards
 	BaseShards = 1,         -- base shards per interval
 	MaxClicksPerSecond = 5, -- Prevents autoclicking exploits (set to whatever feels fair)
+    FriendBonusCap = 1.5, -- Max 50% from friends
 
 	BonusActions = {
 		Click = 2,
@@ -10,91 +11,114 @@ local AFKPointConfig = {
 
 	Gamepasses = {
 		["x2 Shards"] = {
-			Value = 2,
 			GamepassId = 1234567890,
-			Description = "Earn double shards permanently. Cannot stack with x3 Shards",
+			Description = "Earn x2 Shards permanently. Cannot stack with x3 Shards",
 			StackType = "Multiply",
 			BoundTo = {"3x Shards"}, -- Cannot purchase if player owns x3 Shards
 			RobuxPrice = 99,
-			PointPrice = 25000
+			PointPrice = 25000,
+            Features = {
+                ShardMultiplier = 2, -- 2x shards from AFKing and clicking
+            }
 		},
 		["x3 Shards"] = {
-			Value = 3,
 			GamepassId = 2345678901,
 			Description = "Earn triple shards permanently. Cannot stack with x2 Shards",
 			StackType = "Multiply",
 			BoundTo = {"x2 Shards"}, -- Cannot purchase if player owns x2 Shards
 			RobuxPrice = 199,
-			PointPrice = 50000
+			PointPrice = 50000,
+            Features = {
+                ShardMultiplier = 3, -- 3x shards from AFKing and clicking
+            }
 		},
 		["VIP"] = {
-			-- See VIP section below for details
-			Value = 1.5,
 			GamepassId = 3456789012,
-			Description = "Earn 50% more shards and unlock VIP features.",
-			StackType = "Multiply",
-			RobuxPrice = 299,
-			PointPrice = 75000
+			Description = "Exclusive VIP perks including 50% more shards, 50% faster auto-clicking, 10% UGC discount and more.",
+			RobuxPrice = 425,
+			PointPrice = 200000,
+            Features = {
+                ChatTag = "🌟VIP🌟",
+                NameColor = Color3.fromRGB(255, 205, 90),
+                DiscountPercent = 10, -- 10% discount on all UGC purchases
+                MinigameBonus = 1.5, -- 50% more shards from minigames
+                AutoClickerMultiplier = 1.5, -- 50% faster auto-clicker
+                ShardMultiplier = 1.5, -- 50% more shards from AFKing and clicking
+            }
 		},
 		["Fast Collector"] = {
-			IntervalMultiplier = 0.7,
 			GamepassId = 4567890123,
 			Description = "Shards awarded 30% faster.",
 			StackType = "Multiply",
 			RobuxPrice = 149,
-			PointPrice = 30000
+			PointPrice = 30000,
+            Features = {
+                IntervalMultiplier = 0.7, -- 30% faster shard collection
+            }
 		},
-	},
-
-	VIP = {
-		ChatTag = "🌟VIP🌟",
-		NameColor = Color3.fromRGB(255, 205, 90),
-		DiscountPercent = 10, -- 10% discount on all purchases
-		MinigameBonus = 1.5,
+        ["Auto Clicker"] = {
+            GamepassId = 5678901234,
+            Description = "Automatically clicks for you, earning shards without manual clicking.",
+            RobuxPrice = 199,
+            PointPrice = 50000,
+            Features = {
+                ClickRate = 5,   -- Clicks per second
+            }
+        }
 	},
 
 	Boosts = {
 		["Friend Invite"] = {
-			Value = 1.1,
 			Description = "For each friend in-game, get +10% shards (max 50%).",
 			StackType = "Multiply",
 			RobuxPrice = nil,
-			PointPrice = nil
+			PointPrice = nil,
+            Features = {
+                ShardMultiplier = 1.1, -- 10% more shards per friend
+            }
 		},
 	},
 
 	Consumables = {
 		["x2 Shards 1hr"] = {
-			Value = 2,
 			Duration = 3600, -- 1 hour
 			ProductId = 1111111111,
 			Description = "x2 shards for 1 hour.",
 			RobuxPrice = 20,
 			PointPrice = 5000,
+            Features = {
+                ShardMultiplier = 2, -- 2x shards for the duration
+            }
 		},
 		["x3 Shards 30min"] = {
-			Value = 3,
 			Duration = 1800, -- 30 minutes
 			ProductId = 1111111112,
 			Description = "x3 shards for 30 minutes.",
 			RobuxPrice = 15,
 			PointPrice = 4000,
+            Features = {
+                ShardMultiplier = 3, -- 3x shards for the duration
+            }
 		},
 		["x10 Shards 5min"] = {
-			Value = 10,
 			Duration = 300, -- 5 minutes
 			ProductId = 1111111113,
 			Description = "x10 shards for 5 minutes.",
 			RobuxPrice = 10,
 			PointPrice = 1500,
+            Features = {
+                ShardMultiplier = 10, -- 10x shards for the duration
+            }
 		},
 		["Minigame x2 1hr"] = {
-			MinigameMultiplier = 2,
 			Duration = 3600,
 			ProductId = 1111111115,
 			Description = "Double rewards from minigames for 1 hour.",
 			RobuxPrice = 18,
 			PointPrice = 2500,
+            Features = {
+                MinigameMultiplier = 2, -- Double minigame rewards for the duration
+            }
 		},
 	},
 
@@ -124,19 +148,10 @@ local AFKPointConfig = {
 		{Name = "Legendary", Requirement = {Type = "Claims", Amount = 25}},
 	},
 
-	Gifting = {
-		Enabled = true,
-		MinGift = 100,       -- Minimum shards per gift
-		MaxGift = 100000,    -- Maximum per transaction
-		RobuxFee = 0,        -- Optional: charge a small Robux fee per gift (set to 0 if not wanted)
-		GiftCooldown = 10,   -- Cooldown in seconds between gifts per player
-	},
-
 	DataStoreKey = "AFKShards",
 	UpgradeKey = "AFKShardUpgrades",
 	ConsumableKey = "AFKShardConsumables",
 	DailyStreakKey = "AFKDailyStreak",
-	FriendBonusCap = 1.5, -- Max 50% from friends
 }
 
 return AFKPointConfig

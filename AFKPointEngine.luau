@@ -78,14 +78,10 @@ end)
 
 local function GetTotalMultiplier(player)
 	local mult = 1
-	mult = mult * AFKPointUtils.GetGamepassMultiplier(player)
-	mult = mult * AFKPointUtils.GetConsumableMultiplier(player)
+	mult = mult * AFKPointUtils.GetMultiplier(player)
+    mult = mult * AFKPointUtils.GetConsumableMultiplier(player)
 
 	local friendBonus = AFKPointUtils.GetFriendBonus(player)
-	local cap = AFKPointConfig.FriendBonusCap or 1
-	if friendBonus > cap then
-		friendBonus = cap
-	end
 	mult = mult * friendBonus
 
 	return mult
@@ -94,9 +90,9 @@ end
 local function GetMinigameMultiplier(player)
 	local minigameMult = 1
 	if AFKPointUtils.IsVIP(player) then
-		minigameMult = minigameMult * (AFKPointConfig.VIP.MinigameBonus or 1)
+		minigameMult = minigameMult * (AFKPointConfig.Gamepasses["VIP"].Features.MinigameMultiplier or 1)
 	end
-	minigameMult = minigameMult * AFKPointUtils.GetMinigameConsumableMultiplier(player)
+	minigameMult = minigameMult * AFKPointUtils.GetMinigameMultiplier(player)
 	return minigameMult
 end
 
@@ -142,7 +138,7 @@ end
 
 function AFKPointEngine.AwardMinigame(player)
 	local mult = GetMinigameMultiplier(player)
-	local base = AFKPointConfig.MinigameWinShards or 10
+	local base = AFKPointConfig.BonusActions.MinigameWin or 10
 	local award = math.floor(base * mult)
 	if award > 0 then
 		playerShards[player.UserId] = (playerShards[player.UserId] or 0) + award
