@@ -1,6 +1,7 @@
 local AFKPointConfig = {
     ShardInterval = 3,      -- seconds between shard awards
     BaseShards = 1,         -- base shards per interval
+    MaxClicksPerSecond = 5, -- Prevents autoclicking exploits (set to whatever feels fair)
 
     BonusActions = {
         Click = 2,
@@ -103,6 +104,22 @@ local AFKPointConfig = {
         [5] = {Type = "Badge", BadgeId = 123456789, Description = "Day 5: Special Badge"},
         [6] = {Type = "Consumable", Consumable = "x10 for 30 min", Description = "Day 6: 10x Shards Booster"},
         [7] = {Type = "Shards", Amount = 5000, Description = "Day 7: 5000 Shards!"},
+    },
+
+    Titles = {
+        -- Unlocked by total shards earned, claims, or milestones
+        {Name = "Rookie Collector", Requirement = {Type = "TotalShards", Amount = 10000}},
+        {Name = "UGC Enthusiast", Requirement = {Type = "Claims", Amount = 5}},
+        {Name = "Shard Tycoon", Requirement = {Type = "TotalShards", Amount = 100000}},
+        {Name = "Legendary", Requirement = {Type = "Claims", Amount = 25}},
+    },
+
+    Gifting = {
+        Enabled = true,
+        MinGift = 100,       -- Minimum shards per gift
+        MaxGift = 100000,    -- Maximum per transaction
+        RobuxFee = 0,        -- Optional: charge a small Robux fee per gift (set to 0 if not wanted)
+        GiftCooldown = 0,   -- Cooldown in seconds between gifts per player
     },
 
     DataStoreKey = "AFKShards",
