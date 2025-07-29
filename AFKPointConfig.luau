@@ -8,13 +8,13 @@ local AFKPointConfig = {
         MinigameWin = 10,
     },
 
-    Multipliers = {
+    Gamepasses = {
         ["x2 Shards"] = {
             Value = 2,
             GamepassId = 1234567890,
             Description = "Earn double shards permanently. Cannot stack with x3 Shards",
             StackType = "Multiply",
-            BoundTo = {"x3 Shards"}, -- Cannot purchase if player owns x3 Shards
+            BoundTo = {"3x Shards"}, -- Cannot purchase if player owns x3 Shards
             RobuxPrice = 99,
             PointPrice = 25000
         },
@@ -23,12 +23,12 @@ local AFKPointConfig = {
             GamepassId = 2345678901,
             Description = "Earn triple shards permanently. Cannot stack with x2 Shards",
             StackType = "Multiply",
-            Exclusive = false,
             BoundTo = {"x2 Shards"}, -- Cannot purchase if player owns x2 Shards
             RobuxPrice = 199,
             PointPrice = 50000
         },
         ["VIP"] = {
+            -- See VIP section below for details
             Value = 1.5,
             GamepassId = 3456789012,
             Description = "Earn 50% more shards and unlock VIP features.",
@@ -44,6 +44,16 @@ local AFKPointConfig = {
             RobuxPrice = 149,
             PointPrice = 30000
         },
+    },
+
+    VIP = {
+        ChatTag = "🌟VIP🌟",
+        NameColor = Color3.fromRGB(255, 205, 90),
+        DiscountPercent = 10, -- 10% discount on all purchases
+        MinigameBonus = 1.5,
+    },
+
+    Boosts = {
         ["Friend Invite"] = {
             Value = 1.1,
             Description = "For each friend in-game, get +10% shards (max 50%).",
@@ -58,7 +68,7 @@ local AFKPointConfig = {
             Value = 2,
             Duration = 3600, -- 1 hour
             ProductId = 1111111111,
-            Description = "2x shards for 1 hour.",
+            Description = "x2 shards for 1 hour.",
             RobuxPrice = 20,
             PointPrice = 5000,
         },
@@ -66,7 +76,7 @@ local AFKPointConfig = {
             Value = 3,
             Duration = 1800, -- 30 minutes
             ProductId = 1111111112,
-            Description = "3x shards for 30 minutes.",
+            Description = "x3 shards for 30 minutes.",
             RobuxPrice = 15,
             PointPrice = 4000,
         },
@@ -74,7 +84,7 @@ local AFKPointConfig = {
             Value = 10,
             Duration = 300, -- 5 minutes
             ProductId = 1111111113,
-            Description = "10x shards for 5 minutes.",
+            Description = "x10 shards for 5 minutes.",
             RobuxPrice = 10,
             PointPrice = 1500,
         },
@@ -99,10 +109,10 @@ local AFKPointConfig = {
     DailyStreakRewards = {
         [1] = {Type = "Shards", Amount = 500, Description = "Day 1: 500 Shards"},
         [2] = {Type = "Shards", Amount = 1000, Description = "Day 2: 1000 Shards"},
-        [3] = {Type = "Consumable", Consumable = "Double Shards 1hr", Description = "Day 3: 2x Shards Booster"},
+        [3] = {Type = "Consumable", Consumable = "x2 Shards 1hr", Description = "Day 3: x2 Shards Booster"},
         [4] = {Type = "Shards", Amount = 2000, Description = "Day 4: 2000 Shards"},
         [5] = {Type = "Badge", BadgeId = 123456789, Description = "Day 5: Special Badge"},
-        [6] = {Type = "Consumable", Consumable = "x10 for 30 min", Description = "Day 6: 10x Shards Booster"},
+        [6] = {Type = "Consumable", Consumable = "x10 Shards 5min", Description = "Day 6: x10 Shards Booster"},
         [7] = {Type = "Shards", Amount = 5000, Description = "Day 7: 5000 Shards!"},
     },
 
@@ -119,7 +129,7 @@ local AFKPointConfig = {
         MinGift = 100,       -- Minimum shards per gift
         MaxGift = 100000,    -- Maximum per transaction
         RobuxFee = 0,        -- Optional: charge a small Robux fee per gift (set to 0 if not wanted)
-        GiftCooldown = 0,   -- Cooldown in seconds between gifts per player
+        GiftCooldown = 10,   -- Cooldown in seconds between gifts per player
     },
 
     DataStoreKey = "AFKShards",
