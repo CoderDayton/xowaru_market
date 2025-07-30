@@ -13,9 +13,9 @@ local AFKPointEngine = {}
 local ShardStore = DataStoreService:GetDataStore(AFKPointConfig.DataStoreKey)
 
 -- Session cache of shards for each player
-local playerShards = {}    -- [userId] = currentShardBalance
-local dirtyPlayers = {}    -- [userId] = true (needs saving)
-local lastAutoAward = {}   -- [userId] = last award os.clock()
+local playerShards = {} -- [userId] = currentShardBalance
+local dirtyPlayers = {} -- [userId] = true (needs saving)
+local lastAutoAward = {} -- [userId] = last award timestamp (os.clock)
 
 -- ========== Remote Signal Initialization ==========
 
@@ -30,9 +30,9 @@ local ShardMinigameResult = RemoteSignal.new("ShardMinigameResult")
 
 -- ========== Cooldown/Anti-Abuse Tables ==========
 
-local spendCooldown = {}        -- [userId] = timestamp
-local bonusClickTimestamps = {} -- [userId] = array of click times
-local minigameCooldown = {}     -- [userId] = timestamp
+local spendCooldown = {}       -- [userId] = timestamp
+local bonusClickTimestamps = {}-- [userId] = array of click times
+local minigameCooldown = {}    -- [userId] = timestamp
 
 -- ========== Data Persistence ==========
 
@@ -68,13 +68,12 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 game:BindToClose(function()
-	-- Save all dirty players on shutdown
 	for userId, _ in pairs(dirtyPlayers) do
 		SaveShards(userId)
 	end
 end)
 
--- ========== Per-Player Interval Award Shards Loop ==========
+-- ========== Award Shards Loop (Per-Player Interval) ==========
 
 task.spawn(function()
 	while true do
@@ -82,7 +81,6 @@ task.spawn(function()
 		for _, player in ipairs(Players:GetPlayers()) do
 			local userId = player.UserId
 
-			-- Per-player interval logic
 			local interval = AFKPointConfig.ShardInterval * AFKPointUtils.GetIntervalMultiplier(player)
 			lastAutoAward[userId] = lastAutoAward[userId] or now
 
@@ -95,20 +93,22 @@ task.spawn(function()
 					dirtyPlayers[userId] = true
 					lastAutoAward[userId] = now
 					ShardUpdateSignal:FireTo(player, playerShards[userId])
+				else
+					lastAutoAward[userId] = now -- Still update time even if no shards awarded
 				end
 			end
 		end
-		task.wait(0.5) -- Fast enough for all intervals to be smooth
+		task.wait(0.5) -- Responsive interval checks for all players
 	end
 end)
 
 -- ========== Bonus Award Actions ==========
 
 function AFKPointEngine.AwardBonus(player, action)
-	local bonusValue = AFKPointConfig.BonusActions[action]
-	if not bonusValue then return end
 	local bonusMult = AFKPointUtils.GetShardMultiplier(player)
-	local bonusAmount = math.floor(bonusValue * bonusMult)
+	local bonusBase = AFKPointConfig.BonusActions[action]
+	if not bonusBase then return end
+	local bonusAmount = math.floor(bonusBase * bonusMult)
 	if bonusAmount > 0 then
 		playerShards[player.UserId] = (playerShards[player.UserId] or 0) + bonusAmount
 		dirtyPlayers[player.UserId] = true
@@ -162,7 +162,7 @@ task.spawn(function()
 		for userId, _ in pairs(dirtyPlayers) do
 			SaveShards(userId)
 		end
-		task.wait(30) -- Save every 30 seconds (safe, doesn't slow main loop)
+		task.wait(30)
 	end
 end)
 

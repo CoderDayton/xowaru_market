@@ -1,5 +1,5 @@
 local AFKPointConfig = {
-	ShardInterval = 3,      -- seconds between shard awards
+	ShardInterval = 1,      -- seconds between shard awards
 	BaseShards = 1,         -- base shards per interval
 	MaxClicksPerSecond = 5, -- Prevents autoclicking exploits (set to whatever feels fair)
     FriendBonusCap = 1.5, -- Max 50% from friends
