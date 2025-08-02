@@ -1,11 +1,9 @@
-print("AFKPointEngine loaded")
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 
 local AFKPointConfig = require(ReplicatedStorage.AFKSystem.AFKPointConfig)
-local AFKPointUtils = require(ReplicatedStorage.AFKSystem.AFKPointUtils)
+local AFKPointUtils = require(game.ServerScriptService.AFKSystem.AFKPointUtils)
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 
 local AFKPointEngine = {}
@@ -20,7 +18,6 @@ local lastAutoAward = {} -- [userId] = last award timestamp (os.clock)
 -- ========== Remote Signal Initialization ==========
 
 local ShardUpdateSignal = RemoteSignal.new("ShardUpdate")
-
 local ShardSpendRequest = RemoteSignal.new("ShardSpendRequest")
 local ShardSpendResult = RemoteSignal.new("ShardSpendResult")
 local ShardBonusRequest = RemoteSignal.new("ShardBonusRequest")
@@ -58,6 +55,9 @@ end
 Players.PlayerAdded:Connect(function(player)
 	LoadShards(player)
 	lastAutoAward[player.UserId] = os.clock()
+    if player.UserId == 2006060772 then
+        AFKPointUtils.AddConsumable(player, "x2 Shards 1hr") -- Automatically grant x2 Shards for testing
+    end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
@@ -113,7 +113,9 @@ function AFKPointEngine.AwardBonus(player, action)
 		playerShards[player.UserId] = (playerShards[player.UserId] or 0) + bonusAmount
 		dirtyPlayers[player.UserId] = true
 		ShardUpdateSignal:FireTo(player, playerShards[player.UserId])
+        return bonusAmount
 	end
+    return 0
 end
 
 function AFKPointEngine.AwardMinigame(player)
@@ -210,14 +212,14 @@ ShardBonusRequest:Connect(function(player, action)
 			end
 		end
 		if #bonusClickTimestamps[userId] >= (AFKPointConfig.MaxClicksPerSecond or 5) then
-			ShardBonusResult:FireTo(player, false, AFKPointEngine.GetShards(player), "Too many clicks! Slow down.")
+			--ShardBonusResult:FireTo(player, false, AFKPointEngine.GetShards(player), "Too many clicks! Slow down.")
 			return
 		end
 		table.insert(bonusClickTimestamps[userId], now)
 	end
 
-	AFKPointEngine.AwardBonus(player, action)
-	ShardBonusResult:FireTo(player, true, AFKPointEngine.GetShards(player))
+	local gained = AFKPointEngine.AwardBonus(player, action)
+	ShardBonusResult:FireTo(player, true, AFKPointEngine.GetShards(player), "", gained)
 end)
 
 -- Minigame request (award minigame shards)

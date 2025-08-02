@@ -80,7 +80,6 @@ local function tryInsertPart(obj)
                 options = itemOptions,
                 baseColor = part.Color,
             }
-            print("Added for animation:", part:GetFullName())
             return
         end
     end

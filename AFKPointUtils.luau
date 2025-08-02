@@ -35,26 +35,43 @@ function AFKPointUtils.AddConsumable(player, boostName)
     local userId = player.UserId
     activeBoosts[userId] = activeBoosts[userId] or {}
     local now = os.time()
-    local expireTime = now + (info.Duration or 0)
+    local duration = info.Duration or 0
+    local expireTime = now + duration
 
-    -- If this boost is already active and not expired, extend the time
-    if activeBoosts[userId][boostName] and activeBoosts[userId][boostName].expiration then
-        local existing = activeBoosts[userId][boostName]
-        if now < existing.expiration then
-            existing.expiration = existing.expiration + (info.Duration or 0)
-        else
-            existing.expiration = expireTime
+    local fields = {
+        ShardMultiplier = info.Features and info.Features.ShardMultiplier or nil,
+        MinigameMultiplier = info.Features and info.Features.MinigameMultiplier or nil,
+    }
+
+    local existing = activeBoosts[userId][boostName]
+    if existing and existing.expiration and now < existing.expiration then
+        -- Extend expiration only, but always update all fields!
+        existing.expiration = existing.expiration + duration
+        for k, v in pairs(fields) do
+            existing[k] = v
         end
-        existing.Value = info.Features and info.Features.ShardMultiplier or nil
-        existing.MinigameMultiplier = info.Features and info.Features.MinigameMultiplier or nil
     else
         activeBoosts[userId][boostName] = {
             expiration = expireTime,
-            Value = info.Features and info.Features.ShardMultiplier or nil,
-            MinigameMultiplier = info.Features and info.Features.MinigameMultiplier or nil,
+            ShardMultiplier = fields.ShardMultiplier,
+            MinigameMultiplier = fields.MinigameMultiplier,
         }
     end
-    return true
+    return activeBoosts[userId][boostName]
+end
+
+function AFKPointUtils.HasConsumable(player, boostName)
+    local userId = player.UserId
+    return activeBoosts[userId] and activeBoosts[userId][boostName] ~= nil
+end
+
+function AFKPointUtils.RemoveConsumable(player, boostName)
+    local userId = player.UserId
+    if activeBoosts[userId] and activeBoosts[userId][boostName] then
+        activeBoosts[userId][boostName] = nil
+        return true
+    end
+    return false
 end
 
 function AFKPointUtils.GetGamepassMultiplier(player)
@@ -75,11 +92,10 @@ function AFKPointUtils.GetConsumableMultiplier(player)
     if activeBoosts[userId] then
         local now = os.time()
         for boostName, data in pairs(activeBoosts[userId]) do
-            if now >= data.expiration then
-                -- Remove expired
+            if data.expiration and now >= data.expiration then
                 activeBoosts[userId][boostName] = nil
-            elseif data.Value then
-                mult = mult * data.Value
+            elseif data.ShardMultiplier and (not data.expiration or data.expiration > now) then
+                mult = mult * data.ShardMultiplier
             end
         end
     end
@@ -110,15 +126,23 @@ function AFKPointUtils.GetShardMultiplier(player)
     local mult = 1
     mult = mult * AFKPointUtils.GetGamepassMultiplier(player)
     mult = mult * AFKPointUtils.GetConsumableMultiplier(player)
+    if AFKPointUtils.HasPremium(player) then
+        local boost = AFKPointConfig.Boosts["Premium"]
+        local premiumMult = boost and boost.Features and boost.Features.ShardMultiplier or 1
+        mult = mult * premiumMult
+    end
 
     local friendMult = AFKPointUtils.GetFriendBonus(player)
-    local cap = AFKPointConfig.FriendBonusCap or 1.5 -- Default to 1.5x cap
+    local cap = AFKPointConfig.FriendBonusCap or 1.5
     if friendMult > cap then
         friendMult = cap
     end
+
     mult = mult * friendMult
+
     return mult
 end
+
 
 -- Multiplier for minigame rewards: VIP + all active minigame boosts (uses Features.MinigameMultiplier)
 function AFKPointUtils.GetMinigameMultiplier(player)
@@ -166,6 +190,11 @@ function AFKPointUtils.IsVIP(player)
     local vipPass = AFKPointConfig.Gamepasses["VIP"]
     if not vipPass then return false end
     return CheckGamepass(player, vipPass.GamepassId)
+end
+
+-- Returns true if player has Premium
+function AFKPointUtils.HasPremium(player)
+    return player.MembershipType == Enum.MembershipType.Premium
 end
 
 -- Returns VIP chat tag if VIP, otherwise nil
