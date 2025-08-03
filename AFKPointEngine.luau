@@ -24,6 +24,7 @@ local ShardBonusRequest = RemoteSignal.new("ShardBonusRequest")
 local ShardBonusResult = RemoteSignal.new("ShardBonusResult")
 local ShardMinigameRequest = RemoteSignal.new("ShardMinigameRequest")
 local ShardMinigameResult = RemoteSignal.new("ShardMinigameResult")
+local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 
 -- ========== Cooldown/Anti-Abuse Tables ==========
 

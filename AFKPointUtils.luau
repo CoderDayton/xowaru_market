@@ -2,8 +2,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AFKPointConfig = require(ReplicatedStorage.AFKSystem.AFKPointConfig)
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 
 local AFKPointUtils = {}
+
+-- ========= Remote Signals =========
+
+local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 
 -- ========= Cache =========
 
@@ -50,12 +55,14 @@ function AFKPointUtils.AddConsumable(player, boostName)
         for k, v in pairs(fields) do
             existing[k] = v
         end
+        ConsumableUpdateSignal:FireTo(player, AFKPointUtils.GetActiveConsumables(player))
     else
         activeBoosts[userId][boostName] = {
             expiration = expireTime,
             ShardMultiplier = fields.ShardMultiplier,
             MinigameMultiplier = fields.MinigameMultiplier,
         }
+        ConsumableUpdateSignal:FireTo(player, AFKPointUtils.GetActiveConsumables(player))
     end
     return activeBoosts[userId][boostName]
 end
@@ -72,6 +79,25 @@ function AFKPointUtils.RemoveConsumable(player, boostName)
         return true
     end
     return false
+end
+
+function AFKPointUtils.GetActiveConsumables(player)
+    local userId = player.UserId
+    if not activeBoosts[userId] then return {} end
+
+    local now = os.time()
+    local list = {}
+    for boostName, data in pairs(activeBoosts[userId]) do
+        if data.expiration and now < data.expiration then
+            table.insert(list, {
+                Name = boostName,
+                Icon = AFKPointConfig.Consumables[boostName] and AFKPointConfig.Consumables[boostName].IconId or 0,
+                EndsAt = data.expiration,
+                Duration = data.expiration - now,
+            })
+        end
+    end
+    return list
 end
 
 function AFKPointUtils.GetGamepassMultiplier(player)
