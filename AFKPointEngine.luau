@@ -2,9 +2,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 
-local AFKPointConfig = require(ReplicatedStorage.AFKSystem.AFKPointConfig)
-local AFKPointUtils = require(game.ServerScriptService.AFKSystem.AFKPointUtils)
-local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
+local AFKPointConfig = require(ReplicatedStorage:WaitForChild("AFKSystem"):WaitForChild("AFKPointConfig"))
+local AFKPointUtils = require(ReplicatedStorage:WaitForChild("AFKSystem"):WaitForChild("AFKPointUtils"))
+local RemoteSignal = require(ReplicatedStorage:WaitForChild("RemoteSignal"))
 
 local AFKPointEngine = {}
 
@@ -24,11 +24,12 @@ local ShardBonusRequest = RemoteSignal.new("ShardBonusRequest")
 local ShardBonusResult = RemoteSignal.new("ShardBonusResult")
 local ShardMinigameRequest = RemoteSignal.new("ShardMinigameRequest")
 local ShardMinigameResult = RemoteSignal.new("ShardMinigameResult")
+local PlayClickSoundSignal = RemoteSignal.new("PlayClickSound")
 
 -- ========== Cooldown/Anti-Abuse Tables ==========
 
 local spendCooldown = {}       -- [userId] = timestamp
-local bonusClickTimestamps = {}-- [userId] = array of click times
+local lastClickTime = {}       -- [userId] = timestamp
 local minigameCooldown = {}    -- [userId] = timestamp
 
 -- ========== Data Persistence ==========
@@ -65,6 +66,9 @@ Players.PlayerRemoving:Connect(function(player)
 	playerShards[player.UserId] = nil
 	dirtyPlayers[player.UserId] = nil
 	lastAutoAward[player.UserId] = nil
+    spendCooldown[player.UserId] = nil
+    lastClickTime[player.UserId] = nil
+    minigameCooldown[player.UserId] = nil
     AFKPointUtils.CleanupPlayer(player)
 end)
 
@@ -173,7 +177,7 @@ end)
 
 -- Spend shards request
 ShardSpendRequest:Connect(function(player, amount)
-	local now = tick()
+	local now = os.time()
 	local userId = player.UserId
 	if spendCooldown[userId] and now - spendCooldown[userId] < 0.5 then
 		ShardSpendResult:FireTo(player, false, AFKPointEngine.GetShards(player), "Please wait before spending again.")
@@ -203,20 +207,17 @@ ShardBonusRequest:Connect(function(player, action)
 	end
 
 	local userId = player.UserId
-	local now = tick()
+	local now = time() -- Use time() for session-smoothness
 	if action == "Click" then
-		bonusClickTimestamps[userId] = bonusClickTimestamps[userId] or {}
-		-- Remove timestamps older than 1 second
-		for i = #bonusClickTimestamps[userId], 1, -1 do
-			if now - bonusClickTimestamps[userId][i] > 1 then
-				table.remove(bonusClickTimestamps[userId], i)
-			end
-		end
-		if #bonusClickTimestamps[userId] >= (AFKPointConfig.MaxClicksPerSecond or 5) then
-			--ShardBonusResult:FireTo(player, false, AFKPointEngine.GetShards(player), "Too many clicks! Slow down.")
+		local allowedRate = AFKPointUtils.GetPlayerClickRate(player)
+		local minInterval = 1 / allowedRate
+		local last = lastClickTime[userId] or 0
+		if now - last < minInterval then
+			-- Too soon since last allowed click
 			return
 		end
-		table.insert(bonusClickTimestamps[userId], now)
+		lastClickTime[userId] = now
+        PlayClickSoundSignal:FireTo(player) -- Play click sound
 	end
 
 	local gained = AFKPointEngine.AwardBonus(player, action)
@@ -226,7 +227,7 @@ end)
 -- Minigame request (award minigame shards)
 ShardMinigameRequest:Connect(function(player)
 	local userId = player.UserId
-	local now = tick()
+	local now = os.time()
 	if minigameCooldown[userId] and now - minigameCooldown[userId] < 3 then
 		ShardMinigameResult:FireTo(player, false, AFKPointEngine.GetShards(player), "Please wait before claiming another minigame reward.")
 		return

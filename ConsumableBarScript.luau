@@ -3,7 +3,7 @@ local RemoteSignal = require(ReplicatedStorage:WaitForChild("RemoteSignal"))
 local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 
 local MainHUD = script.Parent
-local consumableBar = MainHUD:FindFirstChild("ConsumableBar")
+local consumableBar = MainHUD:WaitForChild("ConsumableBar")
 
 local consumableSlots = {}
 
@@ -18,44 +18,72 @@ local function formatTime(secs)
     end
 end
 
--- Add or update a boost slot (idempotent)
-local function AddOrUpdateConsumableSlot(consumableName, icon, endsAt)
+-- Add or update a boost slot
+local function AddOrUpdateConsumableSlot(consumableName, pIcon, endsAt)
     local slot = consumableSlots[consumableName]
+
     if not slot then
         slot = Instance.new("Frame")
         slot.Name = consumableName
-        slot.Size = UDim2.fromOffset(58, 62)
-        slot.BackgroundTransparency = 0.15
-        slot.BackgroundColor3 = Color3.fromRGB(68, 72, 90)
+        slot.Size = UDim2.fromOffset(60, 64)
+        slot.BackgroundTransparency = 1
+        slot.BackgroundColor3 = Color3.fromRGB(44, 47, 70) -- Deep blue/purple, fits your theme
+        slot.ZIndex = 20
+
         local slotCorner = Instance.new("UICorner")
+        slotCorner.CornerRadius = UDim.new(0, 15)
         slotCorner.Parent = slot
-        slotCorner.CornerRadius = UDim.new(0, 14)
+
         slot.Parent = consumableBar
 
+        -- **Large icon, fits within, centered**
         local icon = Instance.new("ImageLabel")
         icon.Name = "Icon"
-        icon.Image = icon
+        icon.Image = pIcon
         icon.BackgroundTransparency = 1
-        icon.Size = UDim2.fromOffset(36, 36)
-        icon.Position = UDim2.fromOffset(11, 5)
+        icon.Size = UDim2.fromOffset(38, 38)
+        icon.Position = UDim2.fromOffset(11, 6)
+        icon.ZIndex = 22
         icon.Parent = slot
 
+        -- **Timer label—bold, with drop shadow, centered**
         local timer = Instance.new("TextLabel")
         timer.Name = "Timer"
         timer.Text = "..."
         timer.Font = Enum.Font.FredokaOne
-        timer.TextColor3 = Color3.fromRGB(230, 230, 255)
+        timer.TextColor3 = Color3.fromRGB(235, 240, 255)
         timer.BackgroundTransparency = 1
-        timer.TextSize = 18
-        timer.Position = UDim2.fromOffset(0, 44)
-        timer.Size = UDim2.new(1, 0, 0, 18)
+        timer.TextSize = 20
+        timer.AnchorPoint = Vector2.new(0.5, 0)
+        timer.Position = UDim2.new(0.5, 0, 1, -24)
+        timer.Size = UDim2.new(1, -6, 0, 20)
+        timer.TextStrokeColor3 = Color3.new(0,0,0)
+        timer.TextStrokeTransparency = 0.42
+        timer.ZIndex = 28
         timer.Parent = slot
+
+        -- **Timer shadow as separate label (darker, slightly offset for readability)**
+        local timerShadow = Instance.new("TextLabel")
+        timerShadow.Text = timer.Text
+        timerShadow.Font = timer.Font
+        timerShadow.TextSize = timer.TextSize
+        timerShadow.TextColor3 = Color3.fromRGB(22,22,32)
+        timerShadow.BackgroundTransparency = 1
+        timerShadow.AnchorPoint = timer.AnchorPoint
+        timerShadow.Position = timer.Position + UDim2.fromOffset(1,2)
+        timerShadow.Size = timer.Size
+        timerShadow.ZIndex = timer.ZIndex - 1
+        timerShadow.TextStrokeTransparency = 1
+        timerShadow.Parent = slot
+        timer:GetPropertyChangedSignal("Text"):Connect(function()
+            timerShadow.Text = timer.Text
+        end)
 
         consumableSlots[consumableName] = slot
     end
 
     slot:SetAttribute("EndsAt", endsAt)
-    slot:SetAttribute("Icon", icon)
+    slot:SetAttribute("Icon", pIcon)
 end
 
 -- Timer loop: update all timers and remove expired slots
@@ -63,7 +91,6 @@ task.spawn(function()
     while true do
         for consumableName, slot in pairs(consumableSlots) do
             local endsAt = slot:GetAttribute("EndsAt")
-            local icon = slot:GetAttribute("Icon")
             if endsAt then
                 local now = os.time()
                 local timeLeft = math.max(0, endsAt - now)
@@ -83,6 +110,7 @@ end)
 
 -- Handler for full update from server
 ConsumableUpdateSignal:Connect(function(consumableList)
+    print("Received consumable list:", consumableList)
     -- Remove any slots not in list
     local keep = {}
     for _, consumable in ipairs(consumableList) do

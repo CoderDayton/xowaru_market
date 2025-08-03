@@ -15,8 +15,13 @@ local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 local gamepassCache = {} -- [userId][gamepassId] = true
 local activeBoosts = {} -- [userId][consumableName] = { expiration, value, minigameMultiplier }
 
-local function CheckGamepass(player, gamepassId)
+function AFKPointUtils.CheckGamepass(player, gamepassName)
     local userId = player.UserId
+    local gamepassId = AFKPointConfig.Gamepasses[gamepassName] and AFKPointConfig.Gamepasses[gamepassName].GamepassId
+    if not gamepassId then
+        warn("Unknown gamepass: " .. tostring(gamepassName))
+        return false
+    end
     gamepassCache[userId] = gamepassCache[userId] or {}
     if gamepassCache[userId][gamepassId] ~= nil then
         return gamepassCache[userId][gamepassId]
@@ -119,7 +124,7 @@ function AFKPointUtils.GetGamepassMultiplier(player)
     for _, groupData in pairs(exclusiveGroups) do
         local highestMultiplier = 1
         for _, passInfo in ipairs(groupData) do
-            if CheckGamepass(player, passInfo.Data.GamepassId) then
+            if AFKPointUtils.CheckGamepass(player, passInfo.Name) then
                 if passInfo.Data.Features and passInfo.Data.Features.ShardMultiplier then
                     highestMultiplier = math.max(highestMultiplier, passInfo.Data.Features.ShardMultiplier)
                 end
@@ -129,8 +134,8 @@ function AFKPointUtils.GetGamepassMultiplier(player)
     end
 
     -- 3. Check for non-exclusive gamepasses
-    for _, passData in pairs(AFKPointConfig.Gamepasses) do
-        if not passData.BoundTo and CheckGamepass(player, passData.GamepassId) then
+    for gamepassName, passData in pairs(AFKPointConfig.Gamepasses) do
+        if not passData.BoundTo and AFKPointUtils.CheckGamepass(player, gamepassName) then
             if passData.Features and passData.Features.ShardMultiplier then
                 mult = mult * passData.Features.ShardMultiplier
             end
@@ -191,7 +196,7 @@ function AFKPointUtils.GetMinigameMultiplier(player)
 
     -- VIP bonus
     local vipPass = AFKPointConfig.Gamepasses["VIP"]
-    if vipPass and CheckGamepass(player, vipPass.GamepassId) then
+    if vipPass and AFKPointUtils.CheckGamepass(player, "VIP") then
         if vipPass.Features and vipPass.Features.MinigameBonus then
             mult = mult * vipPass.Features.MinigameBonus
         end
@@ -216,9 +221,9 @@ end
 -- Multiplier for how much faster a player receives AFK ticks (lower = faster)
 function AFKPointUtils.GetIntervalMultiplier(player)
     local mult = 1
-    for _, info in pairs(AFKPointConfig.Gamepasses) do
+    for gamepassName, info in pairs(AFKPointConfig.Gamepasses) do
         if info.Features and info.Features.IntervalMultiplier then
-            if CheckGamepass(player, info.GamepassId) then
+            if AFKPointUtils.CheckGamepass(player, gamepassName) then
                 mult = mult * info.Features.IntervalMultiplier
             end
         end
@@ -230,7 +235,7 @@ end
 function AFKPointUtils.IsVIP(player)
     local vipPass = AFKPointConfig.Gamepasses["VIP"]
     if not vipPass then return false end
-    return CheckGamepass(player, vipPass.GamepassId)
+    return AFKPointUtils.CheckGamepass(player, "VIP")
 end
 
 -- Returns true if player has Premium
@@ -242,7 +247,7 @@ end
 function AFKPointUtils.GetChatTag(player)
     local vipPass = AFKPointConfig.Gamepasses["VIP"]
     if not vipPass then return nil end
-    if CheckGamepass(player, vipPass.GamepassId) then
+    if AFKPointUtils.CheckGamepass(player, "VIP") then
         return vipPass.Features and vipPass.Features.ChatTag or nil
     end
     return nil
@@ -252,7 +257,7 @@ end
 function AFKPointUtils.GetDiscount(player)
     local vipPass = AFKPointConfig.Gamepasses["VIP"]
     if not vipPass then return 0 end
-    if CheckGamepass(player, vipPass.GamepassId) then
+    if AFKPointUtils.CheckGamepass(player, "VIP") then
         return vipPass.Features and vipPass.Features.DiscountPercent or 0
     end
     return 0
@@ -263,6 +268,26 @@ function AFKPointUtils.CleanupPlayer(player)
     if not userId then return end
     activeBoosts[userId] = nil -- Clear active boosts
     gamepassCache[userId] = nil -- Clear gamepass cache
+end
+
+function AFKPointUtils.GetPlayerClickRate(player)
+    -- Base click rate is from config (manual clicking)
+    local rate = AFKPointConfig.MaxClicksPerSecond or 5
+
+    -- Auto-Clicker Gamepass check
+    if AFKPointUtils.CheckGamepass(player, "Auto Clicker") then
+        rate = AFKPointConfig.Gamepasses["Auto Clicker"].Features.ClickRate or rate
+        -- VIP stacking
+        if AFKPointUtils.CheckGamepass(player, "VIP") then
+            rate = rate * (AFKPointConfig.Gamepasses["VIP"].Features.AutoClickerMultiplier or 1)
+        end
+        -- Use math.floor for robustness
+        rate = math.floor(rate)
+    end
+
+    -- Safety: Cap at reasonable maximum (anti-exploit)
+    rate = math.clamp(rate, 1, 100)
+    return rate
 end
 
 return AFKPointUtils

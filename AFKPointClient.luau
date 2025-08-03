@@ -3,7 +3,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD")
-local AFKPointConfig = require(ReplicatedStorage:WaitForChild("AFKSystem"):WaitForChild("AFKPointConfig"))
 
 -- Request/response channels
 local ShardSpendRequest = RemoteSignal.new("ShardSpendRequest")
@@ -13,13 +12,11 @@ local ShardBonusResult = RemoteSignal.new("ShardBonusResult")
 local ShardMinigameRequest = RemoteSignal.new("ShardMinigameRequest")
 local ShardMinigameResult = RemoteSignal.new("ShardMinigameResult")
 local ShardUpdateSignal = RemoteSignal.new("ShardUpdate") -- Live sync
+local PlayClickSoundSignal = RemoteSignal.new("PlayClickSound")
 
 -- ========== Local Variables ==========
 local currentShardBalance = 0
 local lastShardBalance = 0
-
-local minClickInterval = 1 / AFKPointConfig.MaxClicksPerSecond or 0.2 -- Default to 5 clicks per second
-local lastClickTime = 0
 
 -- ====== Request Functions ======
 
@@ -46,10 +43,8 @@ ShardSpendResult:Connect(function(success, newBalance, err)
 end)
 
 ShardBonusResult:Connect(function(success, newBalance, message, gained)
-	if success then
-        if gained and gained > 0 then
-            showClickPopup(gained)
-        end
+	if success and gained and gained > 0 then
+        showClickPopup(gained)
 	end
 end)
 
@@ -61,72 +56,103 @@ ShardMinigameResult:Connect(function(success, newBalance)
 	end
 end)
 
+PlayClickSoundSignal:Connect(function()
+    playClickSound()
+end)
+
 -- ====== Other Handlers ======
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not gameProcessed then
-        if canClick() then
-            ClaimBonus("Click")
-            playClickSound()
-        end
+        ClaimBonus("Click")
     end
 end)
 
 MainHUD.MainClickButton.MouseButton1Click:Connect(function()
-    if canClick() then
-        ClaimBonus("Click")
-        playClickSound()
-    end
+    ClaimBonus("Click")
 end)
 
 -- ====== UI Update Function ======
 
 function FormatShardCount(n)
+    n = tonumber(n) or 0
     if n < 1000000 then
-        return string.format("%s", tostring(n):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""))
+        -- Use string pattern to insert commas every three digits
+        local s = tostring(math.floor(n))
+        local len = #s
+        local formatted = ""
+        for i = 1, len do
+            formatted = formatted .. s:sub(i,i)
+            if (len - i) % 3 == 0 and i < len then
+                formatted = formatted .. ","
+            end
+        end
+        return formatted
     end
     local units = {"", "K", "M", "B", "T", "Q"}
     local k = 1000
     local magnitude = math.floor(math.log(n, k))
     local value = n / (k ^ magnitude)
     local suffix = units[magnitude] or ("e" .. tostring(magnitude*3))
-    local formatted = string.format("%.2f", value):gsub("%.?0+$", "") -- removes .00 or .0
+    local formatted = string.format("%.2f", value)
     return formatted .. suffix
 end
 
 function updateShards(newShardCount)
-    local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD")
     local left = MainHUD:WaitForChild("Left")
     local shards = left:WaitForChild("Shards")
     local label = shards:WaitForChild("ShardAmount")
     if not label then return end
     newShardCount = tonumber(newShardCount) or 0
 
-    local UIScale = shards:FindFirstChildWhichIsA("UIScale") or Instance.new("UIScale")
+    -- Always use a single UIScale instance
+    local UIScale = shards:FindFirstChild("UIScale") or Instance.new("UIScale")
+    UIScale.Name = "UIScale"
     UIScale.Parent = shards
+
+    -- Robust: Stop any previous scale tweens and instantly reset scale to 1
     UIScale.Scale = 1
+    if UIScale:FindFirstChild("PulseTween") then
+        UIScale.PulseTween:Destroy()
+    end
+
+    -- Only one number tween at a time
+    if label:FindFirstChild("CountTween") then
+        label.CountTween:Destroy()
+    end
 
     local value = Instance.new("NumberValue")
+    value.Name = "CountTween"
     value.Value = lastShardBalance
+    value.Parent = label
 
-    local tween = TweenService:Create(value, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Value = newShardCount})
+    local tween = TweenService:Create(value, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Value = newShardCount})
+
     value.Changed:Connect(function()
         label.Text = FormatShardCount(math.floor(value.Value))
     end)
+
     tween.Completed:Connect(function()
         label.Text = FormatShardCount(newShardCount)
-        TweenService:Create(UIScale, TweenInfo.new(0.16, Enum.EasingStyle.Quad), {Scale = 1.17}):Play()
-        task.wait(0.13)
-        TweenService:Create(UIScale, TweenInfo.new(0.19, Enum.EasingStyle.Quad), {Scale = 1}):Play()
         value:Destroy()
+        tween:Destroy()
     end)
+
+    -- Gentle pulse, **never larger than 1.07**
+    local pulseTween = TweenService:Create(UIScale, TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1.07})
+    pulseTween.Name = "PulseTween"
+    pulseTween.Parent = UIScale
+    pulseTween:Play()
+
+    pulseTween.Completed:Connect(function()
+        TweenService:Create(UIScale, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1}):Play()
+    end)
+
     tween:Play()
     lastShardBalance = newShardCount
 end
 
 function showClickPopup(amount)
-    local TweenService = game:GetService("TweenService")
-    local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD")
     local popup = Instance.new("Frame")
     popup.BackgroundTransparency = 1
     popup.Size = UDim2.fromOffset(150, 44)
@@ -179,15 +205,6 @@ function playClickSound()
     sound.Parent = MainHUD
     sound:Play()
     sound.Ended:Connect(function() sound:Destroy() end)
-end
-
-function canClick()
-    local now = tick()
-    if now - lastClickTime >= minClickInterval then
-        lastClickTime = now
-        return true
-    end
-    return false
 end
 
 -- ====== Live Balance Sync ======

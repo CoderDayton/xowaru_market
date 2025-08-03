@@ -11,7 +11,7 @@ local AFKPointConfig = {
 
 	Gamepasses = {
 		["x2 Shards"] = {
-			GamepassId = 1234567890,
+			GamepassId = 376098507,
 			Description = "Earn x2 Shards permanently. Cannot stack with x3 Shards",
 			StackType = "Multiply",
 			BoundTo = {"x3 Shards"},
@@ -20,7 +20,7 @@ local AFKPointConfig = {
 			Features = {
 				ShardMultiplier = 2,
 			},
-			Icon = "rbxassetid://x2shardsiconid",
+			Icon = "rbxassetid://376098507",
 		},
 		["x3 Shards"] = {
 			GamepassId = 2345678901,
@@ -32,7 +32,7 @@ local AFKPointConfig = {
 			Features = {
 				ShardMultiplier = 3,
 			},
-			Icon = "rbxassetid://x3shardsiconid",
+			Icon = "rbxassetid://376098507",
 		},
 		["VIP"] = {
 			GamepassId = 3456789012,
@@ -57,7 +57,7 @@ local AFKPointConfig = {
 			Features = {
 				IntervalMultiplier = 0.7,
 			},
-			Icon = "rbxassetid://fastcollectoriconid",
+			Icon = "rbxassetid://376098507",
 		},
 		["Auto Clicker"] = {
 			GamepassId = 5678901234,
@@ -67,7 +67,7 @@ local AFKPointConfig = {
 			Features = {
 				ClickRate = 5,
 			},
-			Icon = "rbxassetid://autoclickericonid",
+			Icon = "rbxassetid://376098507",
 		}
 	},
 
@@ -101,7 +101,7 @@ local AFKPointConfig = {
 			Features = {
 				ShardMultiplier = 2,
 			},
-			Icon = "rbxassetid://consumable_x2_1hr",
+			Icon = "rbxassetid://138071024126324",
 		},
 		["x3 Shards 30min"] = {
 			Duration = 1800,
@@ -112,7 +112,7 @@ local AFKPointConfig = {
 			Features = {
 				ShardMultiplier = 3,
 			},
-			Icon = "rbxassetid://consumable_x3_30min",
+			Icon = "rbxassetid://376098507",
 		},
 		["x10 Shards 5min"] = {
 			Duration = 300,
@@ -123,7 +123,7 @@ local AFKPointConfig = {
 			Features = {
 				ShardMultiplier = 10,
 			},
-			Icon = "rbxassetid://consumable_x10_5min",
+			Icon = "rbxassetid://376098507",
 		},
 		["Minigame x2 1hr"] = {
 			Duration = 3600,
@@ -134,7 +134,7 @@ local AFKPointConfig = {
 			Features = {
 				MinigameMultiplier = 2,
 			},
-			Icon = "rbxassetid://consumable_minigame_x2_1hr",
+			Icon = "rbxassetid://376098507",
 		},
 	},
 
