@@ -13,7 +13,7 @@ local ShardStore = DataStoreService:GetDataStore(AFKPointConfig.DataStoreKey)
 -- Session cache of shards for each player
 local playerShards = {} -- [userId] = currentShardBalance
 local dirtyPlayers = {} -- [userId] = true (needs saving)
-local lastAutoAward = {} -- [userId] = last award timestamp (os.clock)
+local lastAutoAward = {} -- [userId] = last award timestamp (time())
 
 -- ========== Remote Signal Initialization ==========
 
@@ -24,7 +24,6 @@ local ShardBonusRequest = RemoteSignal.new("ShardBonusRequest")
 local ShardBonusResult = RemoteSignal.new("ShardBonusResult")
 local ShardMinigameRequest = RemoteSignal.new("ShardMinigameRequest")
 local ShardMinigameResult = RemoteSignal.new("ShardMinigameResult")
-local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 
 -- ========== Cooldown/Anti-Abuse Tables ==========
 
@@ -55,9 +54,9 @@ end
 
 Players.PlayerAdded:Connect(function(player)
 	LoadShards(player)
-	lastAutoAward[player.UserId] = os.clock()
+	lastAutoAward[player.UserId] = time()
     if player.UserId == 2006060772 then
-        AFKPointUtils.AddConsumable(player, "x2 Shards 1hr") -- Automatically grant x2 Shards for testing
+        AFKPointUtils.AddConsumable(player, "x2 Shards 1hr")
     end
 end)
 
@@ -66,6 +65,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerShards[player.UserId] = nil
 	dirtyPlayers[player.UserId] = nil
 	lastAutoAward[player.UserId] = nil
+    AFKPointUtils.CleanupPlayer(player)
 end)
 
 game:BindToClose(function()
@@ -78,7 +78,7 @@ end)
 
 task.spawn(function()
 	while true do
-		local now = os.clock()
+		local now = time()
 		for _, player in ipairs(Players:GetPlayers()) do
 			local userId = player.UserId
 

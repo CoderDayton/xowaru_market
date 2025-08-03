@@ -5,7 +5,7 @@ local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 local MainHUD = script.Parent
 local consumableBar = MainHUD:FindFirstChild("ConsumableBar")
 
-local boostSlots = {}
+local consumableSlots = {}
 
 local function formatTime(secs)
     if secs <= 0 then return "0s" end
@@ -19,11 +19,11 @@ local function formatTime(secs)
 end
 
 -- Add or update a boost slot (idempotent)
-local function AddOrUpdateBoostSlot(boostName, iconId, endsAt)
-    local slot = boostSlots[boostName]
+local function AddOrUpdateConsumableSlot(consumableName, icon, endsAt)
+    local slot = consumableSlots[consumableName]
     if not slot then
         slot = Instance.new("Frame")
-        slot.Name = boostName
+        slot.Name = consumableName
         slot.Size = UDim2.fromOffset(58, 62)
         slot.BackgroundTransparency = 0.15
         slot.BackgroundColor3 = Color3.fromRGB(68, 72, 90)
@@ -34,7 +34,7 @@ local function AddOrUpdateBoostSlot(boostName, iconId, endsAt)
 
         local icon = Instance.new("ImageLabel")
         icon.Name = "Icon"
-        icon.Image = "rbxassetid://" .. tostring(iconId)
+        icon.Image = icon
         icon.BackgroundTransparency = 1
         icon.Size = UDim2.fromOffset(36, 36)
         icon.Position = UDim2.fromOffset(11, 5)
@@ -51,19 +51,19 @@ local function AddOrUpdateBoostSlot(boostName, iconId, endsAt)
         timer.Size = UDim2.new(1, 0, 0, 18)
         timer.Parent = slot
 
-        boostSlots[boostName] = slot
+        consumableSlots[consumableName] = slot
     end
 
     slot:SetAttribute("EndsAt", endsAt)
-    slot:SetAttribute("IconId", iconId)
+    slot:SetAttribute("Icon", icon)
 end
 
 -- Timer loop: update all timers and remove expired slots
 task.spawn(function()
     while true do
-        for boostName, slot in pairs(boostSlots) do
+        for consumableName, slot in pairs(consumableSlots) do
             local endsAt = slot:GetAttribute("EndsAt")
-            local iconId = slot:GetAttribute("IconId")
+            local icon = slot:GetAttribute("Icon")
             if endsAt then
                 local now = os.time()
                 local timeLeft = math.max(0, endsAt - now)
@@ -73,7 +73,7 @@ task.spawn(function()
                 end
                 if timeLeft <= 0 then
                     slot:Destroy()
-                    boostSlots[boostName] = nil
+                    consumableSlots[consumableName] = nil
                 end
             end
         end
@@ -82,20 +82,20 @@ task.spawn(function()
 end)
 
 -- Handler for full update from server
-ConsumableUpdateSignal:Connect(function(boostList)
+ConsumableUpdateSignal:Connect(function(consumableList)
     -- Remove any slots not in list
     local keep = {}
-    for _, boost in ipairs(boostList) do
-        keep[boost.Name] = true
+    for _, consumable in ipairs(consumableList) do
+        keep[consumable.Name] = true
     end
-    for boostName, slot in pairs(boostSlots) do
-        if not keep[boostName] then
+    for consumableName, slot in pairs(consumableSlots) do
+        if not keep[consumableName] then
             slot:Destroy()
-            boostSlots[boostName] = nil
+            consumableSlots[consumableName] = nil
         end
     end
-    -- Add/update all boosts in the list
-    for _, boost in ipairs(boostList) do
-        AddOrUpdateBoostSlot(boost.Name, boost.Icon, boost.EndsAt)
+    -- Add/update all consumables in the list
+    for _, consumable in ipairs(consumableList) do
+        AddOrUpdateConsumableSlot(consumable.Name, consumable.Icon, consumable.EndsAt)
     end
 end)

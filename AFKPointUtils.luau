@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AFKPointConfig = require(ReplicatedStorage.AFKSystem.AFKPointConfig)
+local FriendUtils = require(ReplicatedStorage.AFKSystem.FriendUtils)
 local MarketplaceService = game:GetService("MarketplaceService")
-local Players = game:GetService("Players")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 
 local AFKPointUtils = {}
@@ -13,7 +13,7 @@ local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 -- ========= Cache =========
 
 local gamepassCache = {} -- [userId][gamepassId] = true
-local activeBoosts = {} -- [userId][boostName] = { expiration, value, minigameMultiplier }
+local activeBoosts = {} -- [userId][consumableName] = { expiration, value, minigameMultiplier }
 
 local function CheckGamepass(player, gamepassId)
     local userId = player.UserId
@@ -30,10 +30,10 @@ local function CheckGamepass(player, gamepassId)
 end
 
 -- Activate (or extend) a consumable boost for a player
-function AFKPointUtils.AddConsumable(player, boostName)
-    local info = AFKPointConfig.Consumables[boostName]
+function AFKPointUtils.AddConsumable(player, consumableName)
+    local info = AFKPointConfig.Consumables[consumableName]
     if not info then
-        warn("Unknown consumable boost: " .. tostring(boostName))
+        warn("Unknown consumable boost: " .. tostring(consumableName))
         return false
     end
 
@@ -48,7 +48,7 @@ function AFKPointUtils.AddConsumable(player, boostName)
         MinigameMultiplier = info.Features and info.Features.MinigameMultiplier or nil,
     }
 
-    local existing = activeBoosts[userId][boostName]
+    local existing = activeBoosts[userId][consumableName]
     if existing and existing.expiration and now < existing.expiration then
         -- Extend expiration only, but always update all fields!
         existing.expiration = existing.expiration + duration
@@ -57,25 +57,25 @@ function AFKPointUtils.AddConsumable(player, boostName)
         end
         ConsumableUpdateSignal:FireTo(player, AFKPointUtils.GetActiveConsumables(player))
     else
-        activeBoosts[userId][boostName] = {
+        activeBoosts[userId][consumableName] = {
             expiration = expireTime,
             ShardMultiplier = fields.ShardMultiplier,
             MinigameMultiplier = fields.MinigameMultiplier,
         }
         ConsumableUpdateSignal:FireTo(player, AFKPointUtils.GetActiveConsumables(player))
     end
-    return activeBoosts[userId][boostName]
+    return activeBoosts[userId][consumableName]
 end
 
-function AFKPointUtils.HasConsumable(player, boostName)
+function AFKPointUtils.HasConsumable(player, consumableName)
     local userId = player.UserId
-    return activeBoosts[userId] and activeBoosts[userId][boostName] ~= nil
+    return activeBoosts[userId] and activeBoosts[userId][consumableName] ~= nil
 end
 
-function AFKPointUtils.RemoveConsumable(player, boostName)
+function AFKPointUtils.RemoveConsumable(player, consumableName)
     local userId = player.UserId
-    if activeBoosts[userId] and activeBoosts[userId][boostName] then
-        activeBoosts[userId][boostName] = nil
+    if activeBoosts[userId] and activeBoosts[userId][consumableName] then
+        activeBoosts[userId][consumableName] = nil
         return true
     end
     return false
@@ -87,11 +87,11 @@ function AFKPointUtils.GetActiveConsumables(player)
 
     local now = os.time()
     local list = {}
-    for boostName, data in pairs(activeBoosts[userId]) do
+    for consumableName, data in pairs(activeBoosts[userId]) do
         if data.expiration and now < data.expiration then
             table.insert(list, {
-                Name = boostName,
-                Icon = AFKPointConfig.Consumables[boostName] and AFKPointConfig.Consumables[boostName].IconId or 0,
+                Name = consumableName,
+                Icon = AFKPointConfig.Consumables[consumableName] and AFKPointConfig.Consumables[consumableName].Icon,
                 EndsAt = data.expiration,
                 Duration = data.expiration - now,
             })
@@ -102,13 +102,41 @@ end
 
 function AFKPointUtils.GetGamepassMultiplier(player)
     local mult = 1
-    for _, info in pairs(AFKPointConfig.Gamepasses) do
-        if info.Features and info.Features.ShardMultiplier then
-            if CheckGamepass(player, info.GamepassId) then
-                mult = mult * info.Features.ShardMultiplier
+
+    -- 1. Find all exclusive groups
+    local exclusiveGroups = {}
+    for passName, passData in pairs(AFKPointConfig.Gamepasses) do
+        if passData.BoundTo then
+            exclusiveGroups[passData.BoundTo] = exclusiveGroups[passData.BoundTo] or {}
+            table.insert(exclusiveGroups[passData.BoundTo], {
+                Name = passName,
+                Data = passData
+            })
+        end
+    end
+
+    -- 2. Check each group for the highest multiplier
+    for _, groupData in pairs(exclusiveGroups) do
+        local highestMultiplier = 1
+        for _, passInfo in ipairs(groupData) do
+            if CheckGamepass(player, passInfo.Data.GamepassId) then
+                if passInfo.Data.Features and passInfo.Data.Features.ShardMultiplier then
+                    highestMultiplier = math.max(highestMultiplier, passInfo.Data.Features.ShardMultiplier)
+                end
+            end
+        end
+        mult = mult * highestMultiplier
+    end
+
+    -- 3. Check for non-exclusive gamepasses
+    for _, passData in pairs(AFKPointConfig.Gamepasses) do
+        if not passData.BoundTo and CheckGamepass(player, passData.GamepassId) then
+            if passData.Features and passData.Features.ShardMultiplier then
+                mult = mult * passData.Features.ShardMultiplier
             end
         end
     end
+
     return mult
 end
 
@@ -117,9 +145,9 @@ function AFKPointUtils.GetConsumableMultiplier(player)
     local userId = player.UserId
     if activeBoosts[userId] then
         local now = os.time()
-        for boostName, data in pairs(activeBoosts[userId]) do
+        for consumableName, data in pairs(activeBoosts[userId]) do
             if data.expiration and now >= data.expiration then
-                activeBoosts[userId][boostName] = nil
+                activeBoosts[userId][consumableName] = nil
             elseif data.ShardMultiplier and (not data.expiration or data.expiration > now) then
                 mult = mult * data.ShardMultiplier
             end
@@ -129,21 +157,8 @@ function AFKPointUtils.GetConsumableMultiplier(player)
 end
 
 function AFKPointUtils.GetFriendBonus(player)
-    local bonus = 1
-    local friendsInGame = 0
-    for _, other in ipairs(Players:GetPlayers()) do
-        if other ~= player then
-            local ok, areFriends = pcall(function()
-                return player:IsFriendsWith(other.UserId)
-            end)
-            if ok and areFriends then
-                friendsInGame += 1
-            end
-        end
-    end
-    if friendsInGame > 0 then
-        bonus = 1 + 0.1 * friendsInGame
-    end
+    local count = FriendUtils.GetFriendCountInServer(player)
+    local bonus = math.min(1 + (count * 0.1), AFKPointConfig.FriendBonusCap or 1.5)
     return bonus
 end
 
@@ -186,9 +201,9 @@ function AFKPointUtils.GetMinigameMultiplier(player)
     local userId = player.UserId
     if activeBoosts[userId] then
         local now = os.time()
-        for boostName, data in pairs(activeBoosts[userId]) do
+        for consumableName, data in pairs(activeBoosts[userId]) do
             if now >= data.expiration then
-                activeBoosts[userId][boostName] = nil
+                activeBoosts[userId][consumableName] = nil
             elseif data.MinigameMultiplier then
                 mult = mult * data.MinigameMultiplier
             end
@@ -243,8 +258,11 @@ function AFKPointUtils.GetDiscount(player)
     return 0
 end
 
-Players.PlayerRemoving:Connect(function(player)
-    gamepassCache[player.UserId] = nil -- Clear cache on player leave
-end)
+function AFKPointUtils.CleanupPlayer(player)
+    local userId = player and player.UserId
+    if not userId then return end
+    activeBoosts[userId] = nil -- Clear active boosts
+    gamepassCache[userId] = nil -- Clear gamepass cache
+end
 
 return AFKPointUtils

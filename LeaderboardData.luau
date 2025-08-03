@@ -8,11 +8,11 @@ local purchaseCooldown = {}
 local LeaderboardData = {}
 
 function LeaderboardData.RecordPurchase(userId, playerName, itemName, price)
-	if purchaseCooldown[userId] and tick() - purchaseCooldown[userId] < 2 then
+	if purchaseCooldown[userId] and time() - purchaseCooldown[userId] < 2 then
 		warn("Player is on purchase cooldown")
 		return
 	end
-	purchaseCooldown[userId] = tick()
+	purchaseCooldown[userId] = time()
 
 	local success, recent = pcall(function()
 		return RecentDS:GetAsync("RecentList") or {}

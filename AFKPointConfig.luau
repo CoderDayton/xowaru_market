@@ -14,36 +14,39 @@ local AFKPointConfig = {
 			GamepassId = 1234567890,
 			Description = "Earn x2 Shards permanently. Cannot stack with x3 Shards",
 			StackType = "Multiply",
-			BoundTo = {"3x Shards"}, -- Cannot purchase if player owns x3 Shards
+			BoundTo = {"x3 Shards"},
 			RobuxPrice = 99,
 			PointPrice = 250000,
 			Features = {
-				ShardMultiplier = 2, -- 2x shards from AFKing and clicking
-			}
+				ShardMultiplier = 2,
+			},
+			Icon = "rbxassetid://x2shardsiconid",
 		},
 		["x3 Shards"] = {
 			GamepassId = 2345678901,
 			Description = "Earn triple shards permanently. Cannot stack with x2 Shards",
 			StackType = "Multiply",
-			BoundTo = {"x2 Shards"}, -- Cannot purchase if player owns x2 Shards
+			BoundTo = {"x2 Shards"},
 			RobuxPrice = 199,
 			PointPrice = 500000,
 			Features = {
-				ShardMultiplier = 3, -- 3x shards from AFKing and clicking
-			}
+				ShardMultiplier = 3,
+			},
+			Icon = "rbxassetid://x3shardsiconid",
 		},
 		["VIP"] = {
 			GamepassId = 3456789012,
 			Description = "Exclusive VIP perks including 50% more shards, 50% faster auto-clicking, 10% UGC discount and more.",
 			RobuxPrice = 425,
+			Icon = "rbxassetid://102392861658517",
 			Features = {
 				ChatTag = "🌟VIP🌟",
 				NameColor = Color3.fromRGB(255, 205, 90),
-				DiscountPercent = 10, -- 10% discount on all UGC purchases
-				MinigameBonus = 2, -- 100% more shards from minigames
-				AutoClickerMultiplier = 2, -- 100% faster auto-clicker
-				ShardMultiplier = 2, -- 100% more shards from AFKing and clicking
-			}
+				DiscountPercent = 10,
+				MinigameBonus = 2,
+				AutoClickerMultiplier = 2,
+				ShardMultiplier = 2,
+			},
 		},
 		["Fast Collector"] = {
 			GamepassId = 4567890123,
@@ -52,8 +55,9 @@ local AFKPointConfig = {
 			RobuxPrice = 149,
 			PointPrice = 30000,
 			Features = {
-				IntervalMultiplier = 0.7, -- 30% faster shard collection
-			}
+				IntervalMultiplier = 0.7,
+			},
+			Icon = "rbxassetid://fastcollectoriconid",
 		},
 		["Auto Clicker"] = {
 			GamepassId = 5678901234,
@@ -61,17 +65,18 @@ local AFKPointConfig = {
 			RobuxPrice = 199,
 			PointPrice = 50000,
 			Features = {
-				ClickRate = 5,   -- Clicks per second
-			}
+				ClickRate = 5,
+			},
+			Icon = "rbxassetid://autoclickericonid",
 		}
 	},
 
+	-- Only show boosts here that are NOT shop unlocks and DO show up in the Boosts UI:
 	Boosts = {
 		["Friend Invite"] = {
 			Description = "For each friend in-game, get +10% shards (max 50%).",
 			StackType = "Multiply",
-			RobuxPrice = nil,
-			PointPrice = nil,
+			Icon = "rbxassetid://friendbonusiconid",
 			Features = {
 				ShardMultiplier = 1.1, -- 10% more shards per friend
 			}
@@ -79,8 +84,7 @@ local AFKPointConfig = {
 		["Premium"] = {
 			Description = "Get +20% shards while Premium is active.",
 			StackType = "Multiply",
-			RobuxPrice = nil,
-			PointPrice = nil,
+			Icon = "rbxassetid://9795349605",
 			Features = {
 				ShardMultiplier = 1.2, -- 20% more shards while Premium
 			}
@@ -89,34 +93,37 @@ local AFKPointConfig = {
 
 	Consumables = {
 		["x2 Shards 1hr"] = {
-			Duration = 3600, -- 1 hour
+			Duration = 3600,
 			ProductId = 1111111111,
 			Description = "x2 shards for 1 hour.",
 			RobuxPrice = 20,
 			PointPrice = 5000,
 			Features = {
-				ShardMultiplier = 2, -- 2x shards for the duration
-			}
+				ShardMultiplier = 2,
+			},
+			Icon = "rbxassetid://consumable_x2_1hr",
 		},
 		["x3 Shards 30min"] = {
-			Duration = 1800, -- 30 minutes
+			Duration = 1800,
 			ProductId = 1111111112,
 			Description = "x3 shards for 30 minutes.",
 			RobuxPrice = 15,
 			PointPrice = 4000,
 			Features = {
-				ShardMultiplier = 3, -- 3x shards for the duration
-			}
+				ShardMultiplier = 3,
+			},
+			Icon = "rbxassetid://consumable_x3_30min",
 		},
 		["x10 Shards 5min"] = {
-			Duration = 300, -- 5 minutes
+			Duration = 300,
 			ProductId = 1111111113,
 			Description = "x10 shards for 5 minutes.",
 			RobuxPrice = 10,
 			PointPrice = 1500,
 			Features = {
-				ShardMultiplier = 10, -- 10x shards for the duration
-			}
+				ShardMultiplier = 10,
+			},
+			Icon = "rbxassetid://consumable_x10_5min",
 		},
 		["Minigame x2 1hr"] = {
 			Duration = 3600,
@@ -125,8 +132,9 @@ local AFKPointConfig = {
 			RobuxPrice = 18,
 			PointPrice = 2500,
 			Features = {
-				MinigameMultiplier = 2, -- Double minigame rewards for the duration
-			}
+				MinigameMultiplier = 2,
+			},
+			Icon = "rbxassetid://consumable_minigame_x2_1hr",
 		},
 	},
 

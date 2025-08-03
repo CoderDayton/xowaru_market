@@ -2,16 +2,24 @@
 -- Simple wrapper for RemoteEvent as a Signal-like API (crosses server/client)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local REMOTE_FOLDER_NAME = "RemoteSignals"
+local remoteFolder = ReplicatedStorage:FindFirstChild(REMOTE_FOLDER_NAME)
+if not remoteFolder then
+    remoteFolder = Instance.new("Folder")
+    remoteFolder.Name = REMOTE_FOLDER_NAME
+    remoteFolder.Parent = ReplicatedStorage
+end
+
 local RemoteSignal = {}
 RemoteSignal.__index = RemoteSignal
 
 function RemoteSignal.new(name)
 	-- Find or create the RemoteEvent with the given name
-	local event = ReplicatedStorage:FindFirstChild(name)
+	local event = remoteFolder:FindFirstChild(name)
 	if not event then
 		event = Instance.new("RemoteEvent")
 		event.Name = name
-		event.Parent = ReplicatedStorage
+		event.Parent = remoteFolder
 	end
 
 	local self = setmetatable({}, RemoteSignal)
