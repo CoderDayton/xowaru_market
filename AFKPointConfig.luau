@@ -42,10 +42,10 @@ local AFKPointConfig = {
 			Features = {
 				ChatTag = "🌟VIP🌟",
 				NameColor = Color3.fromRGB(255, 205, 90),
-				DiscountPercent = 10,
-				MinigameBonus = 2,
-				AutoClickerMultiplier = 2,
-				ShardMultiplier = 2,
+				DiscountPercent = 10, -- 10% off UGC items
+				MinigameBonus = 2, -- 2x minigame rewards
+				AutoClickerMultiplier = 1.3, -- 30% faster auto-clicking
+				ShardMultiplier = 2, -- 100% more shards
 			},
 		},
 		["Fast Collector"] = {
