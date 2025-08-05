@@ -1,14 +1,20 @@
+--[[
+    ButtonScript.luau
+    Handles button animations and click sounds for UI buttons.
+    Provides hover, press, and release animations with sound effects.
+    Requires RemoteSignal for sound playback.
+]]--
+
 local TweenService = game:GetService("TweenService")
-local MainHUD = script.Parent
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RemoteSignal = require(ReplicatedStorage:WaitForChild("RemoteSignal"))
 
-local CLICK_SOUND_ID = "rbxassetid://96992108673305"
+local SetupButtonsLocal = RemoteSignal.new("SetupButtonsLocal")
 
--- Utility: Animate scale with UIScale on a button
+
 local function setupButtonAnimation(btn)
 	local scale = btn:FindFirstChildWhichIsA("UIScale") or Instance.new("UIScale")
-    scale.Parent = btn
+	scale.Parent = btn
 	scale.Scale = 1
 	local hoverTween, pressTween
 
@@ -43,26 +49,18 @@ local function setupButtonAnimation(btn)
 	end)
 end
 
-local function addClickSound(button)
-    local clickSound = button:FindFirstChild("ClickSound") or Instance.new("Sound")
-    clickSound.Name = "ClickSound"
-    clickSound.SoundId = CLICK_SOUND_ID
-    clickSound.Volume = 0.1
-    clickSound.PlaybackSpeed = 1.5
-    clickSound.Parent = button
-    button.MouseButton1Click:Connect(function()
-        if clickSound.IsPlaying then
-            clickSound:Stop()
-        else
-            clickSound:Play()
-        end
-    end)
-end
-
--- Automatically wire up all TextButton/ImageButton descendants
-for _, btn in ipairs(MainHUD:GetDescendants()) do
-	if btn:IsA("TextButton") or btn:IsA("ImageButton") then
-		setupButtonAnimation(btn)
-		addClickSound(btn)
+local function setupButtons(parent)
+	for _, btn in ipairs(parent:GetDescendants()) do
+		if btn:IsA("TextButton") or btn:IsA("ImageButton") then
+			setupButtonAnimation(btn)
+		end
 	end
 end
+
+SetupButtonsLocal:LocalConnect(function(parent)
+    if parent and parent:IsA("Instance") then
+        setupButtons(parent)
+    else
+        warn("Invalid parent provided to SetupButtonsLocal")
+    end
+end)

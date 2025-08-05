@@ -27,16 +27,15 @@ local function AddOrUpdateConsumableSlot(consumableName, pIcon, endsAt)
         slot.Name = consumableName
         slot.Size = UDim2.fromOffset(60, 64)
         slot.BackgroundTransparency = 1
-        slot.BackgroundColor3 = Color3.fromRGB(44, 47, 70) -- Deep blue/purple, fits your theme
+        slot.BackgroundColor3 = Color3.fromRGB(44, 47, 70)
         slot.ZIndex = 20
-
-        local slotCorner = Instance.new("UICorner")
-        slotCorner.CornerRadius = UDim.new(0, 15)
-        slotCorner.Parent = slot
-
         slot.Parent = consumableBar
 
-        -- **Large icon, fits within, centered**
+        local UIScale = Instance.new("UIScale")
+        UIScale.Name = "UIScale"
+        UIScale.Scale = 1.2
+        UIScale.Parent = slot
+
         local icon = Instance.new("ImageLabel")
         icon.Name = "Icon"
         icon.Image = pIcon
@@ -46,7 +45,6 @@ local function AddOrUpdateConsumableSlot(consumableName, pIcon, endsAt)
         icon.ZIndex = 22
         icon.Parent = slot
 
-        -- **Timer label—bold, with drop shadow, centered**
         local timer = Instance.new("TextLabel")
         timer.Name = "Timer"
         timer.Text = "..."
@@ -62,7 +60,6 @@ local function AddOrUpdateConsumableSlot(consumableName, pIcon, endsAt)
         timer.ZIndex = 28
         timer.Parent = slot
 
-        -- **Timer shadow as separate label (darker, slightly offset for readability)**
         local timerShadow = Instance.new("TextLabel")
         timerShadow.Text = timer.Text
         timerShadow.Font = timer.Font
@@ -110,7 +107,6 @@ end)
 
 -- Handler for full update from server
 ConsumableUpdateSignal:Connect(function(consumableList)
-    print("Received consumable list:", consumableList)
     -- Remove any slots not in list
     local keep = {}
     for _, consumable in ipairs(consumableList) do
@@ -122,7 +118,7 @@ ConsumableUpdateSignal:Connect(function(consumableList)
             consumableSlots[consumableName] = nil
         end
     end
-    -- Add/update all consumables in the list
+
     for _, consumable in ipairs(consumableList) do
         AddOrUpdateConsumableSlot(consumable.Name, consumable.Icon, consumable.EndsAt)
     end

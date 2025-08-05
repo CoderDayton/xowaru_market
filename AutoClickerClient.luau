@@ -7,6 +7,9 @@ local LocalPlayer = Players.LocalPlayer
 local AFKPointConfig = require(ReplicatedStorage:WaitForChild("AFKSystem"):WaitForChild("AFKPointConfig"))
 local AFKPointUtils = require(ReplicatedStorage:WaitForChild("AFKSystem"):WaitForChild("AFKPointUtils"))
 local RemoteSignal = require(ReplicatedStorage:WaitForChild("RemoteSignal"))
+
+-- ====== Remote Signals ======
+local AutoClickerToggle = RemoteSignal.new("AutoClickerToggle")
 local ShardBonusSignal = RemoteSignal.new("ShardBonusRequest")
 
 -- UI references
@@ -46,7 +49,7 @@ local function updateUI()
 	end
 end
 
-autoClickerButton.MouseButton1Click:Connect(function()
+AutoClickerToggle:LocalConnect(function()
 	if not AFKPointUtils.CheckGamepass(LocalPlayer, "Auto Clicker") then
 		-- Prompt for purchase if not owned
 		MarketplaceService:PromptGamePassPurchase(LocalPlayer, AFKPointConfig.Gamepasses["Auto Clicker"].GamepassId)

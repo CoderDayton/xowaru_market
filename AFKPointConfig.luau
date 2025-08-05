@@ -15,29 +15,34 @@ local AFKPointConfig = {
 			Description = "Earn x2 Shards permanently. Cannot stack with x3 Shards",
 			StackType = "Multiply",
 			BoundTo = {"x3 Shards"},
-			RobuxPrice = 99,
-			PointPrice = 250000,
+			RobuxPrice = 299,
 			Features = {
 				ShardMultiplier = 2,
 			},
-			Icon = "rbxassetid://376098507",
+			Icon = "rbxassetid://95317559895303",
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromHex("#05596c")),
+				ColorSequenceKeypoint.new(1, Color3.fromHex("#181c28")),
+			}),
 		},
 		["x3 Shards"] = {
 			GamepassId = 2345678901,
 			Description = "Earn triple shards permanently. Cannot stack with x2 Shards",
 			StackType = "Multiply",
 			BoundTo = {"x2 Shards"},
-			RobuxPrice = 199,
-			PointPrice = 500000,
+			RobuxPrice = 499,
 			Features = {
 				ShardMultiplier = 3,
 			},
-			Icon = "rbxassetid://376098507",
+            Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromHex("#05596c")),
+				ColorSequenceKeypoint.new(1, Color3.fromHex("#181c28")),
+			}),
 		},
 		["VIP"] = {
 			GamepassId = 3456789012,
 			Description = "Exclusive VIP perks including 50% more shards, 50% faster auto-clicking, 10% UGC discount and more.",
-			RobuxPrice = 425,
+			RobuxPrice = 499,
 			Icon = "rbxassetid://102392861658517",
 			Features = {
 				ChatTag = "🌟VIP🌟",
@@ -47,27 +52,31 @@ local AFKPointConfig = {
 				AutoClickerMultiplier = 1.3, -- 30% faster auto-clicking
 				ShardMultiplier = 2, -- 100% more shards
 			},
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(193, 171, 46)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(39, 35, 9)),
+            }),
 		},
 		["Fast Collector"] = {
 			GamepassId = 4567890123,
 			Description = "Shards awarded 30% faster.",
 			StackType = "Multiply",
-			RobuxPrice = 149,
-			PointPrice = 30000,
+			RobuxPrice = 179,
 			Features = {
 				IntervalMultiplier = 0.7,
 			},
-			Icon = "rbxassetid://376098507",
 		},
 		["Auto Clicker"] = {
 			GamepassId = 5678901234,
 			Description = "Automatically clicks for you, earning shards without manual clicking.",
-			RobuxPrice = 199,
-			PointPrice = 50000,
+			RobuxPrice = 49,
 			Features = {
 				ClickRate = 5,
 			},
-			Icon = "rbxassetid://376098507",
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(146, 146, 146)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(53, 53, 53)),
+            }),
 		}
 	},
 
@@ -76,7 +85,6 @@ local AFKPointConfig = {
 		["Friend Invite"] = {
 			Description = "For each friend in-game, get +10% shards (max 50%).",
 			StackType = "Multiply",
-			Icon = "rbxassetid://friendbonusiconid",
 			Features = {
 				ShardMultiplier = 1.1, -- 10% more shards per friend
 			}
@@ -92,34 +100,45 @@ local AFKPointConfig = {
 	},
 
 	Consumables = {
-		["x2 Shards 1hr"] = {
-			Duration = 3600,
+		["x2 Shards 15m"] = {
+			Duration = 900,
 			ProductId = 1111111111,
-			Description = "x2 shards for 1 hour.",
-			RobuxPrice = 20,
-			PointPrice = 5000,
+			Description = "x2 shards for 15 minutes.",
+			RobuxPrice = 19,
+			PointPrice = 12000,
 			Features = {
 				ShardMultiplier = 2,
 			},
 			Icon = "rbxassetid://138071024126324",
 		},
-		["x3 Shards 30min"] = {
+        ["x2 Shards 30min"] = {
 			Duration = 1800,
-			ProductId = 1111111112,
-			Description = "x3 shards for 30 minutes.",
-			RobuxPrice = 15,
-			PointPrice = 4000,
+			ProductId = 1111111111,
+			Description = "x2 shards for 30 minutes.",
+			RobuxPrice = 38,
+			PointPrice = 24000,
 			Features = {
-				ShardMultiplier = 3,
+				ShardMultiplier = 2,
 			},
-			Icon = "rbxassetid://376098507",
+			Icon = "rbxassetid://138071024126324",
+		},
+        ["x2 Shards 1hr"] = {
+			Duration = 3600,
+			ProductId = 1111111111,
+			Description = "x2 shards for 1 hour.",
+			RobuxPrice = 59,
+			PointPrice = 48000,
+			Features = {
+				ShardMultiplier = 2,
+			},
+			Icon = "rbxassetid://138071024126324",
 		},
 		["x10 Shards 5min"] = {
 			Duration = 300,
 			ProductId = 1111111113,
 			Description = "x10 shards for 5 minutes.",
-			RobuxPrice = 10,
-			PointPrice = 1500,
+			RobuxPrice = 29,
+			PointPrice = 25000,
 			Features = {
 				ShardMultiplier = 10,
 			},
@@ -129,8 +148,8 @@ local AFKPointConfig = {
 			Duration = 3600,
 			ProductId = 1111111115,
 			Description = "Double rewards from minigames for 1 hour.",
-			RobuxPrice = 18,
-			PointPrice = 2500,
+			RobuxPrice = 25,
+			PointPrice = 5000,
 			Features = {
 				MinigameMultiplier = 2,
 			},
@@ -138,23 +157,43 @@ local AFKPointConfig = {
 		},
 	},
 
-	ShardPurchases = {
-		{Amount = 1000, Price = 5},
-		{Amount = 10000, Price = 10},
-		{Amount = 50000, Price = 75},
-		{Amount = 250000, Price = 250},
-		{Amount = 500000, Price = 325},
-	},
+    -- ShardPurchases: Price is in Robux
+    ShardPurchases = {
+        {Amount = 250000, Price = 9},
+        {Amount = 1000000, Price = 36},
+        {Amount = 2500000, Price = 75},
+        {Amount = 5000000, Price = 139},
+        {Amount = 10000000, Price = 249},
+        {Amount = 20000000, Price = 429},
+        {Amount = 30000000, Price = 599},
+    },
 
-	DailyStreakRewards = {
-		[1] = {Type = "Shards", Amount = 500, Description = "Day 1: 500 Shards"},
-		[2] = {Type = "Shards", Amount = 1000, Description = "Day 2: 1000 Shards"},
-		[3] = {Type = "Consumable", Consumable = "x2 Shards 1hr", Description = "Day 3: x2 Shards Booster"},
-		[4] = {Type = "Shards", Amount = 2000, Description = "Day 4: 2000 Shards"},
-		[5] = {Type = "Badge", BadgeId = 123456789, Description = "Day 5: Special Badge"},
-		[6] = {Type = "Consumable", Consumable = "x10 Shards 5min", Description = "Day 6: x10 Shards Booster"},
-		[7] = {Type = "Shards", Amount = 5000, Description = "Day 7: 5000 Shards!"},
-	},
+    DailyStreakRewards = {
+        [1] = {
+            {Type = "Shards", Amount = 5000, Description = "Day 1: 5,000 Shards"},
+        },
+        [2] = {
+            {Type = "Consumable", Consumable = "x2 Shards 15m", Description = "Day 2: x2 Shards Booster (15 min)"},
+        },
+        [3] = {
+            {Type = "Shards", Amount = 15000, Description = "Day 3: 15,000 Shards"},
+        },
+        [4] = {
+            {Type = "Consumable", Consumable = "Minigame x2 1hr", Description = "Day 4: x2 Minigame Booster (1 hr)"},
+            {Type = "Shards", Amount = 20000, Description = "Bonus: 20,000 Shards"},
+        },
+        [5] = {
+            {Type = "Consumable", Consumable = "x2 Shards 30min", Description = "Bonus: x2 Shards Booster (30 min)"},
+        },
+        [6] = {
+            {Type = "Consumable", Consumable = "x10 Shards 5min", Description = "Day 6: x10 Shards Booster (5 min)"},
+        },
+        [7] = {
+            {Type = "Shards", Amount = 100000, Description = "Day 7: 100,000 Shards!"},
+            {Type = "Consumable", Consumable = "x2 Shards 30min", Description = "Bonus: x2 Shards Booster (30 min)"},
+            {Type = "Badge", BadgeId = 123456789, Description = "Day 7: One Week Streak Badge"},
+        },
+    },
 
 	Titles = {
 		-- Unlocked by total shards earned, claims, or milestones
