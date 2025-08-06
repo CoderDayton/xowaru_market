@@ -24,7 +24,7 @@ local ShardBonusRequest = RemoteSignal.new("ShardBonusRequest")
 local ShardBonusResult = RemoteSignal.new("ShardBonusResult")
 local ShardMinigameRequest = RemoteSignal.new("ShardMinigameRequest")
 local ShardMinigameResult = RemoteSignal.new("ShardMinigameResult")
-local PlayClickSoundSignal = RemoteSignal.new("PlayClickSound")
+local PlaySoundRemote = RemoteSignal.new("PlaySoundRemote")
 
 -- ========== Cooldown/Anti-Abuse Tables ==========
 
@@ -217,7 +217,7 @@ ShardBonusRequest:Connect(function(player, action)
 			return
 		end
 		lastClickTime[userId] = now
-        PlayClickSoundSignal:FireTo(player) -- Play click sound
+        PlaySoundRemote:FireTo(player, "ClickSound")
 	end
 
 	local gained = AFKPointEngine.AwardBonus(player, action)

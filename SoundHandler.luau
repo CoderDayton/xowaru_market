@@ -1,39 +1,76 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
+local Debris = game:GetService("Debris")
 local RemoteSignal = require(ReplicatedStorage:WaitForChild("RemoteSignal"))
 
-local PlayButtonSoundLocal = RemoteSignal.new("PlayButtonSoundLocal")
+local SoundHandler = {}
 
-PlayButtonSoundLocal:LocalConnect(function(soundId, volume, playbackSpeed)
-    -- Add validation and defaults
-    if not soundId or soundId == "" then
-        warn("[SoundHandler] Invalid soundId provided:", soundId)
-        return
-    end
+local soundConfigs = {
+	ButtonSound = {
+		id = "rbxassetid://14382276423",
+		volume = 0.06,
+		playbackSpeed = 1.1
+	},
+    ClickSound = {
+        id = "rbxassetid://1673280232",
+        volume = 0.03,
+        playbackSpeed = 1.0
+    },
+}
 
-    -- Ensure proper rbxassetid format
-    if not string.find(soundId, "rbxassetid://") then
-        soundId = "rbxassetid://" .. tostring(soundId)
-    end
+local preloadedSounds = {}
 
-    volume = volume or 0.1
-    playbackSpeed = playbackSpeed or 1.5
+for name, config in pairs(soundConfigs) do
+	local soundId = config.id
+	if not string.find(soundId, "rbxassetid://") then
+		soundId = "rbxassetid://" .. tostring(soundId)
+	end
 
-    print("[SoundHandler] Playing sound:", soundId, "Volume:", volume, "Speed:", playbackSpeed)  -- Debug
+	local sound = Instance.new("Sound")
+	sound.SoundId = soundId
+	sound.Volume = config.volume
+	sound.PlaybackSpeed = config.playbackSpeed
+	sound.Parent = SoundService  -- Preload in SoundService
 
-    local sound = Instance.new("Sound")
-    sound.SoundId = soundId
-    sound.Volume = volume
-    sound.PlaybackSpeed = playbackSpeed
-    sound.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	preloadedSounds[name] = sound
+end
 
-    -- Play and handle cleanup safely
-    sound:Play()
+function SoundHandler.PlaySound(name, overrideVolume, overridePlaybackSpeed)
+	local config = soundConfigs[name]
+	if not config then
+		warn("[SoundHandler] Sound name not found:", name)
+		return
+	end
 
-    -- Use Connect instead of Wait to avoid blocking/errors
-    sound.Ended:Connect(function()
-        sound:Destroy()
-    end)
+	local soundId = config.id
+	local volume = overrideVolume or config.volume
+	local playbackSpeed = overridePlaybackSpeed or config.playbackSpeed
 
-    -- Fallback cleanup after reasonable time
-    game:GetService("Debris"):AddItem(sound, 10)  -- Auto-cleanup after 10 seconds max
+	local sound
+	if preloadedSounds[name] then
+		sound = preloadedSounds[name]:Clone()  -- Clone preloaded for efficiency
+	else
+		warn("[SoundHandler] Preloaded sound not available for:", name)  -- Shouldn't happen if preloaded
+		sound = Instance.new("Sound")
+		sound.SoundId = soundId
+		sound.Volume = volume
+		sound.PlaybackSpeed = playbackSpeed
+	end
+
+	sound.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+	sound:Play()
+
+	sound.Ended:Connect(function()
+		sound:Destroy()
+	end)
+
+	Debris:AddItem(sound, 10)  -- Auto-cleanup after 10 seconds max
+end
+
+local PlaySoundLocal = RemoteSignal.new("PlaySoundLocal")
+PlaySoundLocal:LocalConnect(function(name, overrideVolume, overridePlaybackSpeed)
+	SoundHandler.PlaySound(name, overrideVolume, overridePlaybackSpeed)
 end)
+
+return SoundHandler

@@ -3,6 +3,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD")
+local SoundHandler = require(ReplicatedStorage:WaitForChild("SoundHandler"))
 
 -- Request/response channels
 local ShardSpendRequest = RemoteSignal.new("ShardSpendRequest")
@@ -12,7 +13,7 @@ local ShardBonusResult = RemoteSignal.new("ShardBonusResult")
 local ShardMinigameRequest = RemoteSignal.new("ShardMinigameRequest")
 local ShardMinigameResult = RemoteSignal.new("ShardMinigameResult")
 local ShardUpdateSignal = RemoteSignal.new("ShardUpdate") -- Live sync
-local PlayClickSoundSignal = RemoteSignal.new("PlayClickSound")
+local PlaySoundRemote = RemoteSignal.new("PlaySoundRemote")
 
 -- ========== Local Variables ==========
 local currentShardBalance = 0
@@ -56,10 +57,6 @@ ShardMinigameResult:Connect(function(success, newBalance)
 	end
 end)
 
-PlayClickSoundSignal:Connect(function()
-    playClickSound()
-end)
-
 -- ====== Other Handlers ======
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -70,6 +67,10 @@ end)
 
 MainHUD.MainClickButton.MouseButton1Click:Connect(function()
     ClaimBonus("Click")
+end)
+
+PlaySoundRemote:Connect(function(name, overrideVolume, overridePlaybackSpeed)
+	SoundHandler.PlaySound(name, overrideVolume, overridePlaybackSpeed)
 end)
 
 -- ====== UI Update Function ======
@@ -196,15 +197,6 @@ function showClickPopup(amount)
     TweenService:Create(UIStroke, TweenInfo.new(1.2, Enum.EasingStyle.Quad), {Transparency = 1}):Play()
     task.wait(1.2)
     popup:Destroy()
-end
-
-function playClickSound()
-    local sound = Instance.new("Sound")
-    sound.SoundId = "rbxassetid://1673280232"
-    sound.Volume = 0.03
-    sound.Parent = MainHUD
-    sound:Play()
-    sound.Ended:Connect(function() sound:Destroy() end)
 end
 
 -- ====== Live Balance Sync ======

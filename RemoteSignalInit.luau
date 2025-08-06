@@ -13,7 +13,6 @@ local SIGNAL_NAMES = {
 	"ShardMinigameRequest",
 	"ShardMinigameResult",
 	"ConsumableUpdate",
-    "PlayClickSound",
 }
 
 for _, name in ipairs(SIGNAL_NAMES) do
