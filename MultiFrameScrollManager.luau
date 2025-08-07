@@ -86,14 +86,14 @@ function MultiFrameScrollManager.setupScrollingFrame(scrollingFrame)
 
 	-- Connect to existing frames
 	for _, child in pairs(scrollingFrame:GetChildren()) do
-		if child:IsA("Frame") and not child.Name == "Top" then
+		if child:IsA("Frame") then
 			connectToLayout(child)
 		end
 	end
 
 	-- Connect to new frames being added
 	scrollingFrame.ChildAdded:Connect(function(child)
-		if child:IsA("Frame") and not child.Name == "Top" then
+		if child:IsA("Frame") then
 			task.wait() -- Wait for layout to be added to the frame
 			connectToLayout(child)
 			updateCanvasSize()

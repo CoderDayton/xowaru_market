@@ -89,22 +89,21 @@ end
 Players.PlayerAdded:Connect(function(player)
     activePlayers[player.UserId] = player
     LoadShards(player)
-    -- cache multipliers
-    multCache[player.UserId] = {
-        interval = AFKPointUtils.GetIntervalMultiplier(player),
-        shard    = AFKPointUtils.GetShardMultiplier(player),
-        clickRate= AFKPointUtils.GetPlayerClickRate(player)
-    }
-    lastAutoAward[player.UserId] = time()
+
     -- owner perk example
     if player.UserId == 2006060772 then
-        AFKPointUtils.AddConsumable(player, "x2 Shards 1hr")
+        AFKPointUtils.AddConsumable(player, "x10 Shards 5min")
     end
+
+    -- cache multipliers
+    refreshMultipliers(player)
+    lastAutoAward[player.UserId] = time()
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    SaveShards(player.UserId)
     activePlayers[player.UserId] = nil
+    -- enqueue save instead of immediate DataStore call
+    markDirty(player.UserId)
     playerShards[player.UserId] = nil
     dirtySet[player.UserId] = nil
     lastAutoAward[player.UserId] = nil
@@ -132,35 +131,29 @@ end)
 -- ========== Award Shards Loop (Per-Player Interval) ==========
 
 task.spawn(function()
-	while true do
-		local now = time()
-        for userId, player in pairs(activePlayers) do
+    task.wait(1)
+
+    while true do
+        local now = time()
+        for userId, _ in pairs(activePlayers) do
             local cache = multCache[userId]
-            if not cache then -- fallback recompute
-                cache = {
-                    interval = AFKPointUtils.GetIntervalMultiplier(player),
-                    shard    = AFKPointUtils.GetShardMultiplier(player)
-                }
-                multCache[userId] = cache
-            end
+            if cache then
+                local interval = AFKPointConfig.ShardInterval * cache.interval
+                lastAutoAward[userId] = lastAutoAward[userId] or now
 
-            local interval = AFKPointConfig.ShardInterval * cache.interval
-            lastAutoAward[userId] = lastAutoAward[userId] or now
-
-            if now - lastAutoAward[userId] >= interval then
-                local shards = math.floor(AFKPointConfig.BaseShards * cache.shard)
-                if shards > 0 then
-                    playerShards[userId] = (playerShards[userId] or 0) + shards
-                    markDirty(userId)
-                    lastAutoAward[userId] = now
-                    -- buffer update instead of immediate fire (handled in sender loop)
-                    pendingUpdate[userId] = playerShards[userId]
-                else
+                if now - lastAutoAward[userId] >= interval then
+                    local shards = math.floor(AFKPointConfig.BaseShards * cache.shard)
+                    if shards > 0 then
+                        playerShards[userId] = (playerShards[userId] or 0) + shards
+                        markDirty(userId)
+                        pendingUpdate[userId] = playerShards[userId]
+                    end
                     lastAutoAward[userId] = now
                 end
             end
+            -- if cache is still nil, skip—next loop it should be set
         end
-        task.wait(0.5) -- Responsive interval checks for all players
+        task.wait(0.5)
     end
 end)
 
@@ -214,7 +207,7 @@ function AFKPointEngine.SpendShards(player, amount)
 		playerShards[userId] = playerShards[userId] - amount
         markDirty(userId)
         pendingUpdate[userId] = playerShards[userId]
-        task.defer(SaveShards, userId)
+        -- save will be handled by buffered worker
 		return true
 	end
 	return false

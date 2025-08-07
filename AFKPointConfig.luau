@@ -69,7 +69,7 @@ local AFKPointConfig = {
             Icon = "rbxassetid://6293578648",
 		},
 		["Auto Clicker"] = {
-			GamepassId = 5678901234,
+			GamepassId = 1328275379,
 			Description = "Automatically clicks for you, earning shards without manual clicking.",
 			RobuxPrice = 49,
 			Features = {

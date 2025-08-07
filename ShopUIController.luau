@@ -5,13 +5,13 @@ local ShopUIPopulator = require(ReplicatedStorage:WaitForChild("AFKSystem").Shop
 local SoundHandler = require(ReplicatedStorage:WaitForChild("SoundHandler"))
 
 local ShopUI = script.Parent
-local MainPanel = ShopUI:WaitForChild("CanvasGroup"):WaitForChild("MainPanel")
+local MainPanel = ShopUI:WaitForChild("MainPanel")
 
 local SetupButtonsLocal = RemoteSignal.new("SetupButtonsLocal")
 
 local shopBindings = {
     {
-        button = "CanvasGroup.MainPanel.CloseButton",
+        button = "MainPanel.CloseButton",
         handler = function()
             ShopUI.Enabled = false
         end

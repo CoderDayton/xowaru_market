@@ -1,6 +1,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AFKPointConfig = require(ReplicatedStorage.AFKSystem.AFKPointConfig)
+local ServerScriptService = game:GetService("ServerScriptService")
 local _FriendUtils
+local _AFKPointEngine
 local MarketplaceService = game:GetService("MarketplaceService")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 
@@ -14,6 +16,11 @@ local ConsumableUpdateSignal = RemoteSignal.new("ConsumableUpdate")
 
 local gamepassCache = {} -- [userId][gamepassId] = true
 local activeBoosts = {} -- [userId][consumableName] = { expiration, value, minigameMultiplier }
+
+local function refreshPlayerMultipliers(player)
+    _AFKPointEngine = _AFKPointEngine or require(ServerScriptService:WaitForChild("AFKSystem").AFKPointEngine)
+    _AFKPointEngine.RefreshPlayerMultipliers(player)
+end
 
 function AFKPointUtils.CheckGamepass(player, gamepassName)
     local userId = player.UserId
@@ -69,6 +76,9 @@ function AFKPointUtils.AddConsumable(player, consumableName)
         }
         ConsumableUpdateSignal:FireTo(player, AFKPointUtils.GetActiveConsumables(player))
     end
+
+    refreshPlayerMultipliers(player)
+
     return activeBoosts[userId][consumableName]
 end
 
@@ -81,6 +91,7 @@ function AFKPointUtils.RemoveConsumable(player, consumableName)
     local userId = player.UserId
     if activeBoosts[userId] and activeBoosts[userId][consumableName] then
         activeBoosts[userId][consumableName] = nil
+        refreshPlayerMultipliers(player)
         return true
     end
     return false
@@ -141,7 +152,6 @@ function AFKPointUtils.GetGamepassMultiplier(player)
             end
         end
     end
-
     return mult
 end
 
@@ -152,7 +162,7 @@ function AFKPointUtils.GetConsumableMultiplier(player)
         local now = os.time()
         for consumableName, data in pairs(activeBoosts[userId]) do
             if data.expiration and now >= data.expiration then
-                activeBoosts[userId][consumableName] = nil
+                AFKPointUtils.RemoveConsumable(player, consumableName)
             elseif data.ShardMultiplier and (not data.expiration or data.expiration > now) then
                 mult = mult * data.ShardMultiplier
             end
@@ -210,6 +220,7 @@ function AFKPointUtils.GetMinigameMultiplier(player)
         for consumableName, data in pairs(activeBoosts[userId]) do
             if now >= data.expiration then
                 activeBoosts[userId][consumableName] = nil
+                AFKPointUtils.RemoveConsumable(player, consumableName)
             elseif data.MinigameMultiplier then
                 mult = mult * data.MinigameMultiplier
             end

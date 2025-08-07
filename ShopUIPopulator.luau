@@ -45,7 +45,7 @@ end
 
 function ShopUIPopulator.PopulateShopUI()
     local success, result = pcall(function()
-        local panel = ShopUI.CanvasGroup.MainPanel
+        local panel = ShopUI.MainPanel
         local contentArea = panel:FindFirstChild("ContentArea")
         if not contentArea then
             error("ContentArea container not found")
