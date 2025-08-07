@@ -6,6 +6,8 @@ local Players             = game:GetService("Players")
 local PlayerGui           = Players.LocalPlayer:WaitForChild("PlayerGui")
 local UIUtils             = require(ReplicatedStorage:WaitForChild("UIUtils"))
 local MultiFrameScrollManager = require(ReplicatedStorage:WaitForChild("MultiFrameScrollManager"))
+local Shared               = ReplicatedStorage:WaitForChild("Shared")
+local StyleGuide           = require(Shared:WaitForChild("StyleGuide"))
 
 local ShopUI              = PlayerGui:WaitForChild("ShopUI")
 
@@ -40,6 +42,7 @@ local function addItemToShopUI(shopItem, parent)
 	productCard.PurchaseButton.Price.Text = tostring(shopItem.Price)
 	productCard.Icon.Image = shopItem.Icon
 	productCard.UIGradient.Color = shopItem.Color
+    productCard.BackgroundColor3 = StyleGuide.Colors.Elevation1
 	productCard.Parent = parent
 end
 
