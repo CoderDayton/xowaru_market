@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD")
 local SoundHandler = require(ReplicatedStorage:WaitForChild("SoundHandler"))
@@ -17,8 +18,9 @@ local ShardUpdateSignal = RemoteSignal.new("ShardUpdate") -- Live sync
 local PlaySoundRemote = RemoteSignal.new("PlaySoundRemote")
 
 -- ========== Local Variables ==========
-local currentShardBalance = 0
-local lastShardBalance = 0
+local currentShardBalance = 0 -- The 'real' balance from server
+local displayedShards = 0 -- What the player sees on screen, for interpolation
+local interpolationConnection = nil -- To hold the RenderStepped connection
 
 -- ====== Request Functions ======
 
@@ -38,7 +40,7 @@ end
 
 ShardSpendResult:Connect(function(success, newBalance, err)
 	if success then
-		print("[SPEND] Success! New shards:", newBalance)
+		updateShards(newBalance, true) -- true indicates an immediate update is needed
 	else
 		warn("[SPEND] Failed:", err or "Unknown error")
 	end
@@ -82,80 +84,78 @@ local PULSE_COLOR     = Color3.fromRGB(185, 245, 255)
 local PULSE_SCALE_MAX = 1.08
 
 -- Cached tweeninfo objects for reuse -------------------------------
-local TI_NUMBER = TweenInfo.new(0.35, Enum.EasingStyle.Quad , Enum.EasingDirection.Out)
 local TI_SCALE  = TweenInfo.new(0.18, Enum.EasingStyle.Sine , Enum.EasingDirection.Out)
 local TI_COLOR  = TweenInfo.new(0.18, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
 
 ----------------------------------------------------------------------
 -- updateShards
 ----------------------------------------------------------------------
-function updateShards(newShardCount: number)
-    local left    = MainHUD:WaitForChild("Left")
-    local shards  = left   :WaitForChild("Shards")
-    local label   = shards :WaitForChild("ShardAmount")
-    if not label then return end
+function updateShards(newShardCount: number, isPurchase: boolean)
+    local wasShardLoss = newShardCount < currentShardBalance
+    currentShardBalance = newShardCount or 0
 
-    newShardCount = tonumber(newShardCount) or 0
-
-    ------------------------------------------------------------------
-    -- 1. Clear prior tweens if still running
-    ------------------------------------------------------------------
-    for _, tag in {"CountTween","ScaleTween","ColorTween"} do
-        local obj = label:FindFirstChild(tag)
-        if obj then obj:Destroy() end
+    -- Only pulse if the player GAINED a significant amount of shards
+    local didGainSignificantly = (newShardCount - displayedShards) > 10 and not wasShardLoss
+    if didGainSignificantly then
+        pulseShardCounter()
     end
 
-    ------------------------------------------------------------------
-    -- 2. Smooth number roll-up
-    ------------------------------------------------------------------
-    local nv   = Instance.new("NumberValue")
-    nv.Name    = "CountTween"
-    nv.Value   = lastShardBalance or 0
-    nv.Parent  = label
-
-    local twNumber = TweenService:Create(nv, TI_NUMBER, {Value = newShardCount})
-    nv.Changed:Connect(function()
-        label.Text = UIUtils.FormatShardCount(nv.Value)
-    end)
-    twNumber.Completed:Connect(function() nv:Destroy() end)
-    twNumber:Play()
-
-    ------------------------------------------------------------------
-    -- 3. Subtle pulse (scale + tint) – both start, then auto-return
-    ------------------------------------------------------------------
-    -- UIScale (create once then reuse)
-    local uiScale = label:FindFirstChildOfClass("UIScale")
-                  or Instance.new("UIScale")
-    uiScale.Parent = label
-
-    -- scale out / back
-    local scaleUp   = TweenService:Create(uiScale, TI_SCALE , {Scale = PULSE_SCALE_MAX})
-    local scaleDown = TweenService:Create(uiScale, TI_SCALE , {Scale = 1})
-
-    -- color shift / back
-    local colorUp   = TweenService:Create(label , TI_COLOR , {TextColor3 = PULSE_COLOR})
-    local colorDown = TweenService:Create(label , TI_COLOR , {TextColor3 = BASE_COLOR})
-
-    scaleUp.Completed:Connect(function() scaleDown:Play() end)
-    colorUp.Completed:Connect(function() colorDown:Play() end)
-
-    -- tag for cleanup (optional, keeps hierarchy tidy)
-    for _, t in {scaleUp, colorUp} do
-        local marker = Instance.new("BoolValue")
-        marker.Name  = t == scaleUp and "ScaleTween" or "ColorTween"
-        marker.Parent = label
-        t.Completed:Connect(function() marker:Destroy() end)
+    -- If this is a purchase (a spend), snap the UI immediately. No interpolation needed.
+    if isPurchase then
+        if interpolationConnection then
+            interpolationConnection:Disconnect()
+            interpolationConnection = nil
+        end
+        displayedShards = currentShardBalance
+        local label = MainHUD.Left.Shards.ShardAmount
+        label.Text = UIUtils.FormatShardCount(displayedShards)
+        return
     end
 
-    scaleUp:Play()
-    colorUp:Play()
+    -- If interpolation is not already running, start it
+    if not interpolationConnection then
+        interpolationConnection = RunService.RenderStepped:Connect(function(dt)
+            local diff = currentShardBalance - displayedShards
 
-    ------------------------------------------------------------------
-    -- 4. Persist balance for next call
-    ------------------------------------------------------------------
-    lastShardBalance = newShardCount
+            -- If we are close enough, just snap to the target and stop.
+            if math.abs(diff) < 1 then
+                displayedShards = currentShardBalance
+                if interpolationConnection then
+                    interpolationConnection:Disconnect()
+                    interpolationConnection = nil
+                end
+            else
+                -- Move towards the target by a fraction of the difference each frame.
+                -- The '5 * dt' makes it so it takes roughly 1/5th of a second to catch up.
+                displayedShards += diff * math.min(5 * dt, 1)
+            end
+
+            -- Update the UI with the interpolated value
+            local label = MainHUD.Left.Shards.ShardAmount
+            if label then
+                label.Text = UIUtils.FormatShardCount(math.floor(displayedShards))
+            end
+        end)
+    end
 end
 
+function pulseShardCounter()
+    local label = MainHUD.Left.Shards.ShardAmount
+    local uiScale = label:FindFirstChildOfClass("UIScale") or Instance.new("UIScale")
+    uiScale.Parent = label
+
+    -- Color and Scale tweens for the pulse effect
+    local colorUp = TweenService:Create(label, TI_COLOR, { TextColor3 = PULSE_COLOR })
+    local colorDown = TweenService:Create(label, TI_COLOR, { TextColor3 = BASE_COLOR })
+    local scaleUp = TweenService:Create(uiScale, TI_SCALE, { Scale = PULSE_SCALE_MAX })
+    local scaleDown = TweenService:Create(uiScale, TI_SCALE, { Scale = 1 })
+
+    colorUp.Completed:Connect(function() colorDown:Play() end)
+    scaleUp.Completed:Connect(function() scaleDown:Play() end)
+
+    colorUp:Play()
+    scaleUp:Play()
+end
 
 function showClickPopup(amount)
     local popup = Instance.new("Frame")
@@ -205,8 +205,12 @@ end
 
 -- ====== Live Balance Sync ======
 ShardUpdateSignal:Connect(function(newBalance)
+    if displayedShards == 0 and newBalance > 0 then
+        -- On first load, snap to the value immediately
+        displayedShards = newBalance
+    end
 	currentShardBalance = newBalance or currentShardBalance
-    updateShards(currentShardBalance)
+    updateShards(currentShardBalance, false)
 end)
 
 return {

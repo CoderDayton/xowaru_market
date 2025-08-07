@@ -103,8 +103,8 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    activePlayers[player.UserId] = nil
     SaveShards(player.UserId)
+    activePlayers[player.UserId] = nil
     playerShards[player.UserId] = nil
     dirtySet[player.UserId] = nil
     lastAutoAward[player.UserId] = nil
@@ -116,9 +116,17 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 game:BindToClose(function()
-	for userId, _ in pairs(dirtySet) do
-		SaveShards(userId)
-	end
+    if #dirtyQueue > 0 or next(dirtySet) then
+        local playersToSave = {}
+        for userId, _ in pairs(dirtySet) do
+            table.insert(playersToSave, userId)
+        end
+
+        for _, userId in ipairs(playersToSave) do
+            SaveShards(userId)
+            task.wait(0.5) -- Stagger final saves to avoid throttling
+        end
+    end
 end)
 
 -- ========== Award Shards Loop (Per-Player Interval) ==========
