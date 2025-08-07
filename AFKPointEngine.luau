@@ -90,11 +90,6 @@ Players.PlayerAdded:Connect(function(player)
     activePlayers[player.UserId] = player
     LoadShards(player)
 
-    -- owner perk example
-    if player.UserId == 2006060772 then
-        AFKPointUtils.AddConsumable(player, "x10 Shards 5min")
-    end
-
     -- cache multipliers
     refreshMultipliers(player)
     lastAutoAward[player.UserId] = time()

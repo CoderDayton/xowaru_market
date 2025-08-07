@@ -38,7 +38,7 @@ local AFKPointConfig = {
 				ColorSequenceKeypoint.new(0, Color3.fromHex("#05596c")),
 				ColorSequenceKeypoint.new(1, Color3.fromHex("#181c28")),
 			}),
-            Icon = "rbxassetid://6293578648",
+            Icon = "rbxassetid://139284947801349",
 		},
 		["VIP"] = {
 			GamepassId = 3456789012,
@@ -66,7 +66,7 @@ local AFKPointConfig = {
 			Features = {
 				IntervalMultiplier = 0.7,
 			},
-            Icon = "rbxassetid://6293578648",
+            Icon = "rbxassetid://108950113922810",
 		},
 		["Auto Clicker"] = {
 			GamepassId = 1328275379,
