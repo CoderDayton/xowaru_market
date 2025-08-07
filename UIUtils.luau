@@ -9,8 +9,6 @@ function UIUtils.TweenTextTransparency(label, targetTransparency, duration)
 	tween.Completed:Wait()
 end
 
-local TweenService = game:GetService("TweenService")
-
 function UIUtils.ShowFeedback(player, message, opts)
     opts = opts or {}
     task.spawn(function()
@@ -135,6 +133,40 @@ function UIUtils.SetupOrUpdateBillboard(podium, config, info)
     mainLabel.TextColor3 = config.MainColor or Color3.fromRGB(255,255,90)
 end
 
+function UIUtils.FormatShardCount(raw)
+    raw = tonumber(raw) or 0
+    raw = math.max(0, raw)
 
+    ------------------------------------------------------------------
+    -- 1. < 1,000,000  →  add commas, round to nearest int
+    ------------------------------------------------------------------
+    if raw < 1_000_000 then
+        local int = math.floor(raw + 0.5)
+
+        -- convert 1234567 → "1,234,567" with one pattern
+        local withCommas = tostring(int):reverse():gsub("(%d%d%d)", "%1,")
+                            :reverse():gsub("^,", "")
+        return withCommas
+    end
+
+    ------------------------------------------------------------------
+    -- 2. ≥ 1,000,000  →  use abbreviations
+    ------------------------------------------------------------------
+    local suffixes = {"", "K", "M", "B", "T", "Q", "Qt", "Sx", "Sp", "O"}
+    local k        = 1000
+    local mag      = math.floor(math.log(raw)/math.log(k))
+    mag            = math.clamp(mag, 0, #suffixes - 1)
+
+    local value    = raw / (k ^ mag)
+    local suffix   = suffixes[mag + 1]
+
+    -- dynamic precision: 0 d.p. for 100+, 1 d.p. for 10-99, 2 d.p. for <10
+    local fmt = (value >= 100 and "%.0f")
+             or (value >=  10 and "%.1f")
+             or "%.2f"
+
+    local txt = string.format(fmt, value):gsub("%.?0+$", "")
+    return txt .. suffix
+end
 
 return UIUtils

@@ -1,6 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AFKPointConfig = require(ReplicatedStorage.AFKSystem.AFKPointConfig)
-local FriendUtils = require(ReplicatedStorage.AFKSystem.FriendUtils)
+local _FriendUtils
 local MarketplaceService = game:GetService("MarketplaceService")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 
@@ -162,7 +162,8 @@ function AFKPointUtils.GetConsumableMultiplier(player)
 end
 
 function AFKPointUtils.GetFriendBonus(player)
-    local count = FriendUtils.GetFriendCountInServer(player)
+    _FriendUtils = _FriendUtils or require(ReplicatedStorage.AFKSystem.FriendUtils)
+    local count = _FriendUtils.GetFriendCountInServer(player)
     local bonus = math.min(1 + (count * 0.1), AFKPointConfig.FriendBonusCap or 1.5)
     return bonus
 end

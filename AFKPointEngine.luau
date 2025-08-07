@@ -10,10 +10,39 @@ local AFKPointEngine = {}
 
 local ShardStore = DataStoreService:GetDataStore(AFKPointConfig.DataStoreKey)
 
--- Session cache of shards for each player
-local playerShards = {} -- [userId] = currentShardBalance
-local dirtyPlayers = {} -- [userId] = true (needs saving)
-local lastAutoAward = {} -- [userId] = last award timestamp (time())
+-- Session caches
+local activePlayers   = {} -- [userId] = Player
+local playerShards    = {} -- [userId] = currentShardBalance
+local dirtySet        = {} -- [userId]=true quick lookup
+local lastAutoAward   = {} -- [userId] = last award timestamp (time())
+
+-- Cached multipliers (re-computed when needed)
+local multCache = {} -- [userId] = {interval=1, shard=1, clickRate=4}
+
+local function refreshMultipliers(player)
+    multCache[player.UserId] = {
+        interval   = AFKPointUtils.GetIntervalMultiplier(player),
+        shard      = AFKPointUtils.GetShardMultiplier(player),
+        clickRate  = AFKPointUtils.GetPlayerClickRate(player),
+    }
+end
+
+-- Expose for other modules (e.g., FriendUtils) to invalidate cache
+function AFKPointEngine.RefreshPlayerMultipliers(player)
+    refreshMultipliers(player)
+end
+
+-- buffered remote updates
+local pendingUpdate = {} -- [userId] = latest balance
+
+-- helper to enqueue dirty saves
+local dirtyQueue = {}
+local function markDirty(userId)
+    if not dirtySet[userId] then
+        dirtySet[userId] = true
+        table.insert(dirtyQueue, userId)
+    end
+end
 
 -- ========== Remote Signal Initialization ==========
 
@@ -40,32 +69,46 @@ local function LoadShards(player)
 		return ShardStore:GetAsync(userId)
 	end)
 	playerShards[userId] = ok and value or 0
-	ShardUpdateSignal:FireTo(player, playerShards[userId])
+	pendingUpdate[userId] = playerShards[userId]
 end
 
 local function SaveShards(userId)
-	if not playerShards[userId] then return end
-	local ok = pcall(function()
-		ShardStore:SetAsync(userId, playerShards[userId])
-	end)
-	if ok then
-		dirtyPlayers[userId] = nil
-	end
+    if not playerShards[userId] then return end
+    local success, err = pcall(function()
+        ShardStore:UpdateAsync(userId, function()
+            return playerShards[userId]
+        end)
+    end)
+    if success then
+        dirtySet[userId] = nil
+    else
+        warn("[AFKPointEngine] DataStore save failed for", userId, err)
+    end
 end
 
 Players.PlayerAdded:Connect(function(player)
-	LoadShards(player)
-	lastAutoAward[player.UserId] = time()
+    activePlayers[player.UserId] = player
+    LoadShards(player)
+    -- cache multipliers
+    multCache[player.UserId] = {
+        interval = AFKPointUtils.GetIntervalMultiplier(player),
+        shard    = AFKPointUtils.GetShardMultiplier(player),
+        clickRate= AFKPointUtils.GetPlayerClickRate(player)
+    }
+    lastAutoAward[player.UserId] = time()
+    -- owner perk example
     if player.UserId == 2006060772 then
         AFKPointUtils.AddConsumable(player, "x2 Shards 1hr")
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-	SaveShards(player.UserId)
-	playerShards[player.UserId] = nil
-	dirtyPlayers[player.UserId] = nil
-	lastAutoAward[player.UserId] = nil
+    activePlayers[player.UserId] = nil
+    SaveShards(player.UserId)
+    playerShards[player.UserId] = nil
+    dirtySet[player.UserId] = nil
+    lastAutoAward[player.UserId] = nil
+    multCache[player.UserId] = nil
     spendCooldown[player.UserId] = nil
     lastClickTime[player.UserId] = nil
     minigameCooldown[player.UserId] = nil
@@ -73,7 +116,7 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 game:BindToClose(function()
-	for userId, _ in pairs(dirtyPlayers) do
+	for userId, _ in pairs(dirtySet) do
 		SaveShards(userId)
 	end
 end)
@@ -83,41 +126,62 @@ end)
 task.spawn(function()
 	while true do
 		local now = time()
-		for _, player in ipairs(Players:GetPlayers()) do
-			local userId = player.UserId
+        for userId, player in pairs(activePlayers) do
+            local cache = multCache[userId]
+            if not cache then -- fallback recompute
+                cache = {
+                    interval = AFKPointUtils.GetIntervalMultiplier(player),
+                    shard    = AFKPointUtils.GetShardMultiplier(player)
+                }
+                multCache[userId] = cache
+            end
 
-			local interval = AFKPointConfig.ShardInterval * AFKPointUtils.GetIntervalMultiplier(player)
-			lastAutoAward[userId] = lastAutoAward[userId] or now
+            local interval = AFKPointConfig.ShardInterval * cache.interval
+            lastAutoAward[userId] = lastAutoAward[userId] or now
 
-			if now - lastAutoAward[userId] >= interval then
-				local totalMult = AFKPointUtils.GetShardMultiplier(player)
-				local shards = math.floor(AFKPointConfig.BaseShards * totalMult)
+            if now - lastAutoAward[userId] >= interval then
+                local shards = math.floor(AFKPointConfig.BaseShards * cache.shard)
+                if shards > 0 then
+                    playerShards[userId] = (playerShards[userId] or 0) + shards
+                    markDirty(userId)
+                    lastAutoAward[userId] = now
+                    -- buffer update instead of immediate fire (handled in sender loop)
+                    pendingUpdate[userId] = playerShards[userId]
+                else
+                    lastAutoAward[userId] = now
+                end
+            end
+        end
+        task.wait(0.5) -- Responsive interval checks for all players
+    end
+end)
 
-				if shards > 0 then
-					playerShards[userId] = (playerShards[userId] or 0) + shards
-					dirtyPlayers[userId] = true
-					lastAutoAward[userId] = now
-					ShardUpdateSignal:FireTo(player, playerShards[userId])
-				else
-					lastAutoAward[userId] = now -- Still update time even if no shards awarded
-				end
-			end
-		end
-		task.wait(0.5) -- Responsive interval checks for all players
-	end
+-- ========== Buffered Remote Update Flush ==========
+
+task.spawn(function()
+    while true do
+        for userId, balance in pairs(pendingUpdate) do
+            local plr = activePlayers[userId]
+            if plr then
+                ShardUpdateSignal:FireTo(plr, balance)
+            end
+            pendingUpdate[userId] = nil
+        end
+        task.wait(0.5)
+    end
 end)
 
 -- ========== Bonus Award Actions ==========
 
 function AFKPointEngine.AwardBonus(player, action)
-	local bonusMult = AFKPointUtils.GetShardMultiplier(player)
+	local bonusMult = (multCache[player.UserId] and multCache[player.UserId].shard) or AFKPointUtils.GetShardMultiplier(player)
 	local bonusBase = AFKPointConfig.BonusActions[action]
 	if not bonusBase then return end
 	local bonusAmount = math.floor(bonusBase * bonusMult)
 	if bonusAmount > 0 then
 		playerShards[player.UserId] = (playerShards[player.UserId] or 0) + bonusAmount
-		dirtyPlayers[player.UserId] = true
-		ShardUpdateSignal:FireTo(player, playerShards[player.UserId])
+		markDirty(player.UserId)
+		pendingUpdate[player.UserId] = playerShards[player.UserId]
         return bonusAmount
 	end
     return 0
@@ -129,8 +193,8 @@ function AFKPointEngine.AwardMinigame(player)
 	local minigameAward = math.floor(base * minigameMult)
 	if minigameAward > 0 then
 		playerShards[player.UserId] = (playerShards[player.UserId] or 0) + minigameAward
-		dirtyPlayers[player.UserId] = true
-		ShardUpdateSignal:FireTo(player, playerShards[player.UserId])
+		markDirty(player.UserId)
+		pendingUpdate[player.UserId] = playerShards[player.UserId]
 	end
 end
 
@@ -140,8 +204,9 @@ function AFKPointEngine.SpendShards(player, amount)
 	local userId = player.UserId
 	if (playerShards[userId] or 0) >= amount then
 		playerShards[userId] = playerShards[userId] - amount
-		dirtyPlayers[userId] = true
-		ShardUpdateSignal:FireTo(player, playerShards[userId])
+        markDirty(userId)
+        pendingUpdate[userId] = playerShards[userId]
+        task.defer(SaveShards, userId)
 		return true
 	end
 	return false
@@ -155,29 +220,30 @@ function AFKPointEngine.AwardShards(player, amount)
 	if amount > 0 then
 		local userId = player.UserId
 		playerShards[userId] = (playerShards[userId] or 0) + amount
-		dirtyPlayers[userId] = true
-		ShardUpdateSignal:FireTo(player, playerShards[userId])
+		markDirty(userId)
+		pendingUpdate[userId] = playerShards[userId]
 		return true
 	end
 	return false
 end
 
--- ========== Batched Save Loop ==========
+-- ========== Throttled Save Worker ==========
 
 task.spawn(function()
-	while true do
-		for userId, _ in pairs(dirtyPlayers) do
-			SaveShards(userId)
-		end
-		task.wait(30)
-	end
+    while true do
+        local userId = table.remove(dirtyQueue, 1)
+        if userId then
+            SaveShards(userId)
+        end
+        task.wait(2) -- keep well under 10 writes / sec budget
+    end
 end)
 
 -- ========== Remote Signal Connections ==========
 
 -- Spend shards request
 ShardSpendRequest:Connect(function(player, amount)
-	local now = os.time()
+	local now = time()
 	local userId = player.UserId
 	if spendCooldown[userId] and now - spendCooldown[userId] < 0.5 then
 		ShardSpendResult:FireTo(player, false, AFKPointEngine.GetShards(player), "Please wait before spending again.")
@@ -209,7 +275,15 @@ ShardBonusRequest:Connect(function(player, action)
 	local userId = player.UserId
 	local now = time() -- Use time() for session-smoothness
 	if action == "Click" then
-		local allowedRate = AFKPointUtils.GetPlayerClickRate(player)
+		local allowedRate
+        local mcache = multCache[userId]
+        if mcache and mcache.clickRate then
+            allowedRate = mcache.clickRate
+        else
+            allowedRate = AFKPointUtils.GetPlayerClickRate(player)
+            if not mcache then mcache = {} multCache[userId] = mcache end
+            mcache.clickRate = allowedRate
+        end
 		local minInterval = 1 / allowedRate
 		local last = lastClickTime[userId] or 0
 		if now - last < minInterval then
@@ -227,7 +301,7 @@ end)
 -- Minigame request (award minigame shards)
 ShardMinigameRequest:Connect(function(player)
 	local userId = player.UserId
-	local now = os.time()
+	local now = time()
 	if minigameCooldown[userId] and now - minigameCooldown[userId] < 3 then
 		ShardMinigameResult:FireTo(player, false, AFKPointEngine.GetShards(player), "Please wait before claiming another minigame reward.")
 		return

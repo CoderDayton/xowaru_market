@@ -38,6 +38,7 @@ local AFKPointConfig = {
 				ColorSequenceKeypoint.new(0, Color3.fromHex("#05596c")),
 				ColorSequenceKeypoint.new(1, Color3.fromHex("#181c28")),
 			}),
+            Icon = "rbxassetid://6293578648",
 		},
 		["VIP"] = {
 			GamepassId = 3456789012,
@@ -65,6 +66,7 @@ local AFKPointConfig = {
 			Features = {
 				IntervalMultiplier = 0.7,
 			},
+            Icon = "rbxassetid://6293578648",
 		},
 		["Auto Clicker"] = {
 			GamepassId = 5678901234,
@@ -77,6 +79,7 @@ local AFKPointConfig = {
                 ColorSequenceKeypoint.new(0, Color3.fromRGB(146, 146, 146)),
                 ColorSequenceKeypoint.new(1, Color3.fromRGB(53, 53, 53)),
             }),
+            Icon = "rbxassetid://6293578648",
 		}
 	},
 
@@ -85,6 +88,7 @@ local AFKPointConfig = {
 		["Friend Invite"] = {
 			Description = "For each friend in-game, get +10% shards (max 50%).",
 			StackType = "Multiply",
+            Icon = "rbxassetid://6293578648",
 			Features = {
 				ShardMultiplier = 1.1, -- 10% more shards per friend
 			}
@@ -142,7 +146,7 @@ local AFKPointConfig = {
 			Features = {
 				ShardMultiplier = 10,
 			},
-			Icon = "rbxassetid://376098507",
+			Icon = "rbxassetid://6293578648",
 		},
 		["Minigame x2 1hr"] = {
 			Duration = 3600,
@@ -153,19 +157,42 @@ local AFKPointConfig = {
 			Features = {
 				MinigameMultiplier = 2,
 			},
-			Icon = "rbxassetid://376098507",
+			Icon = "rbxassetid://6293578648",
 		},
 	},
 
     -- ShardPurchases: Price is in Robux
     ShardPurchases = {
-        {Amount = 250000, Price = 9},
-        {Amount = 1000000, Price = 36},
-        {Amount = 2500000, Price = 75},
-        {Amount = 5000000, Price = 139},
-        {Amount = 10000000, Price = 249},
-        {Amount = 20000000, Price = 429},
-        {Amount = 30000000, Price = 599},
+        {
+            Amount = 250000,
+            Price = 9,
+            Icon = "rbxassetid://6293578648",
+        },
+        {
+            Amount = 1000000,
+            Price = 36,
+            Icon = "rbxassetid://6293578648",
+        },
+        {
+            Amount = 2500000,
+            Price = 75,
+            Icon = "rbxassetid://6293578648",
+        },
+        {
+            Amount = 10000000,
+            Price = 249,
+            Icon = "rbxassetid://6293578648",
+        },
+        {
+            Amount = 20000000,
+            Price = 429,
+            Icon = "rbxassetid://6293578648",
+        },
+        {
+            Amount = 30000000,
+            Price = 599,
+            Icon = "rbxassetid://6293578648",
+        },
     },
 
     DailyStreakRewards = {

@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
 local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD")
 local SoundHandler = require(ReplicatedStorage:WaitForChild("SoundHandler"))
+local UIUtils = require(ReplicatedStorage:WaitForChild("UIUtils"))
 
 -- Request/response channels
 local ShardSpendRequest = RemoteSignal.new("ShardSpendRequest")
@@ -75,83 +76,86 @@ end)
 
 -- ====== UI Update Function ======
 
-function FormatShardCount(n)
-    n = tonumber(n) or 0
-    if n < 1000000 then
-        -- Use string pattern to insert commas every three digits
-        local s = tostring(math.floor(n))
-        local len = #s
-        local formatted = ""
-        for i = 1, len do
-            formatted = formatted .. s:sub(i,i)
-            if (len - i) % 3 == 0 and i < len then
-                formatted = formatted .. ","
-            end
-        end
-        return formatted
-    end
-    local units = {"", "K", "M", "B", "T", "Q"}
-    local k = 1000
-    local magnitude = math.floor(math.log(n, k))
-    local value = n / (k ^ magnitude)
-    local suffix = units[magnitude] or ("e" .. tostring(magnitude*3))
-    local formatted = string.format("%.2f", value)
-    return formatted .. suffix
-end
+-- Palette (edit to match your UI theme) -----------------------------
+local BASE_COLOR      = Color3.fromRGB(255, 255, 255)
+local PULSE_COLOR     = Color3.fromRGB(185, 245, 255)
+local PULSE_SCALE_MAX = 1.08
 
-function updateShards(newShardCount)
-    local left = MainHUD:WaitForChild("Left")
-    local shards = left:WaitForChild("Shards")
-    local label = shards:WaitForChild("ShardAmount")
+-- Cached tweeninfo objects for reuse -------------------------------
+local TI_NUMBER = TweenInfo.new(0.35, Enum.EasingStyle.Quad , Enum.EasingDirection.Out)
+local TI_SCALE  = TweenInfo.new(0.18, Enum.EasingStyle.Sine , Enum.EasingDirection.Out)
+local TI_COLOR  = TweenInfo.new(0.18, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+
+----------------------------------------------------------------------
+-- updateShards
+----------------------------------------------------------------------
+function updateShards(newShardCount: number)
+    local left    = MainHUD:WaitForChild("Left")
+    local shards  = left   :WaitForChild("Shards")
+    local label   = shards :WaitForChild("ShardAmount")
     if not label then return end
+
     newShardCount = tonumber(newShardCount) or 0
 
-    -- Always use a single UIScale instance
-    local UIScale = shards:FindFirstChild("UIScale") or Instance.new("UIScale")
-    UIScale.Name = "UIScale"
-    UIScale.Parent = shards
-
-    -- Robust: Stop any previous scale tweens and instantly reset scale to 1
-    UIScale.Scale = 1
-    if UIScale:FindFirstChild("PulseTween") then
-        UIScale.PulseTween:Destroy()
+    ------------------------------------------------------------------
+    -- 1. Clear prior tweens if still running
+    ------------------------------------------------------------------
+    for _, tag in {"CountTween","ScaleTween","ColorTween"} do
+        local obj = label:FindFirstChild(tag)
+        if obj then obj:Destroy() end
     end
 
-    -- Only one number tween at a time
-    if label:FindFirstChild("CountTween") then
-        label.CountTween:Destroy()
+    ------------------------------------------------------------------
+    -- 2. Smooth number roll-up
+    ------------------------------------------------------------------
+    local nv   = Instance.new("NumberValue")
+    nv.Name    = "CountTween"
+    nv.Value   = lastShardBalance or 0
+    nv.Parent  = label
+
+    local twNumber = TweenService:Create(nv, TI_NUMBER, {Value = newShardCount})
+    nv.Changed:Connect(function()
+        label.Text = UIUtils.FormatShardCount(nv.Value)
+    end)
+    twNumber.Completed:Connect(function() nv:Destroy() end)
+    twNumber:Play()
+
+    ------------------------------------------------------------------
+    -- 3. Subtle pulse (scale + tint) – both start, then auto-return
+    ------------------------------------------------------------------
+    -- UIScale (create once then reuse)
+    local uiScale = label:FindFirstChildOfClass("UIScale")
+                  or Instance.new("UIScale")
+    uiScale.Parent = label
+
+    -- scale out / back
+    local scaleUp   = TweenService:Create(uiScale, TI_SCALE , {Scale = PULSE_SCALE_MAX})
+    local scaleDown = TweenService:Create(uiScale, TI_SCALE , {Scale = 1})
+
+    -- color shift / back
+    local colorUp   = TweenService:Create(label , TI_COLOR , {TextColor3 = PULSE_COLOR})
+    local colorDown = TweenService:Create(label , TI_COLOR , {TextColor3 = BASE_COLOR})
+
+    scaleUp.Completed:Connect(function() scaleDown:Play() end)
+    colorUp.Completed:Connect(function() colorDown:Play() end)
+
+    -- tag for cleanup (optional, keeps hierarchy tidy)
+    for _, t in {scaleUp, colorUp} do
+        local marker = Instance.new("BoolValue")
+        marker.Name  = t == scaleUp and "ScaleTween" or "ColorTween"
+        marker.Parent = label
+        t.Completed:Connect(function() marker:Destroy() end)
     end
 
-    local value = Instance.new("NumberValue")
-    value.Name = "CountTween"
-    value.Value = lastShardBalance
-    value.Parent = label
+    scaleUp:Play()
+    colorUp:Play()
 
-    local tween = TweenService:Create(value, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Value = newShardCount})
-
-    value.Changed:Connect(function()
-        label.Text = FormatShardCount(math.floor(value.Value))
-    end)
-
-    tween.Completed:Connect(function()
-        label.Text = FormatShardCount(newShardCount)
-        value:Destroy()
-        tween:Destroy()
-    end)
-
-    -- Gentle pulse, **never larger than 1.07**
-    local pulseTween = TweenService:Create(UIScale, TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1.07})
-    pulseTween.Name = "PulseTween"
-    pulseTween.Parent = UIScale
-    pulseTween:Play()
-
-    pulseTween.Completed:Connect(function()
-        TweenService:Create(UIScale, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1}):Play()
-    end)
-
-    tween:Play()
+    ------------------------------------------------------------------
+    -- 4. Persist balance for next call
+    ------------------------------------------------------------------
     lastShardBalance = newShardCount
 end
+
 
 function showClickPopup(amount)
     local popup = Instance.new("Frame")
@@ -177,7 +181,7 @@ function showClickPopup(amount)
     text.BackgroundTransparency = 1
     text.Position = UDim2.fromOffset(20, 0)
     text.Size = UDim2.fromOffset(108, 44)
-    text.Text = "+"..FormatShardCount(amount)
+    text.Text = "+"..UIUtils.FormatShardCount(amount)
     text.Font = Enum.Font.FredokaOne
     text.TextSize = 42
     text.TextColor3 = Color3.new(1,1,1)

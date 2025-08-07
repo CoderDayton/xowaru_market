@@ -4,6 +4,8 @@ local AFKPointConfig      = require(AFKSystem.AFKPointConfig)
 local ProductCardTemplate = AFKSystem.ProductCardTemplate
 local Players             = game:GetService("Players")
 local PlayerGui           = Players.LocalPlayer:WaitForChild("PlayerGui")
+local UIUtils             = require(ReplicatedStorage:WaitForChild("UIUtils"))
+local MultiFrameScrollManager = require(ReplicatedStorage:WaitForChild("MultiFrameScrollManager"))
 
 local ShopUI              = PlayerGui:WaitForChild("ShopUI")
 
@@ -44,35 +46,72 @@ end
 function ShopUIPopulator.PopulateShopUI()
     local success, result = pcall(function()
         local panel = ShopUI.CanvasGroup.MainPanel
-        local content = panel.ContentArea.Gamepasses.Content
-
-        if not content then
-            error("Content container not found")
+        local contentArea = panel:FindFirstChild("ContentArea")
+        if not contentArea then
+            error("ContentArea container not found")
         end
-
-        clearChildren(content)
 
         local itemCount = 0
 
         -- Gamepasses section
-        for itemName, itemData in pairs(AFKPointConfig.Gamepasses) do
-            local shopItem = createShopItem(itemName, itemData)
-            addItemToShopUI(shopItem, content)
-            itemCount += 1
+        local gamepassesSection = contentArea:FindFirstChild("Gamepasses")
+        if gamepassesSection then
+            local content = gamepassesSection:FindFirstChild("Content")
+            if content then
+                clearChildren(content)
+
+                -- Populate Gamepasses
+                for itemName, itemData in pairs(AFKPointConfig.Gamepasses) do
+                    local shopItem = createShopItem(itemName, itemData)
+                    addItemToShopUI(shopItem, content)
+                    itemCount += 1
+                end
+            end
         end
 
-        -- for _, purchase in ipairs(AFKPointConfig.ShardPurchases) do
-        --     local shopItem = createShopItem("Buy " .. purchase.Amount .. " Shards", {
-        --         Description = "Purchase " .. purchase.Amount .. " shards",
-        --         RobuxPrice = purchase.Price,
-        --     })
-        --     addItemToShopUI(shopItem, content)
-        -- end
+        -- Shard purchases section
+        local shardsSection = contentArea:FindFirstChild("Shards")
+        if shardsSection and AFKPointConfig.ShardPurchases then
+            local content = shardsSection:FindFirstChild("Content")
+            if content then
+                clearChildren(content)
 
-        -- for itemName, itemData in pairs(AFKPointConfig.Consumables) do
-        --     local shopItem = createShopItem(itemName, itemData)
-        --     addItemToShopUI(shopItem, content)
-        -- end
+                for _, purchase in ipairs(AFKPointConfig.ShardPurchases) do
+                    local formattedAmount = ""
+                    if UIUtils and UIUtils.FormatShardCount then
+                        formattedAmount = UIUtils.FormatShardCount(purchase.Amount)
+                    else
+                        formattedAmount = tostring(purchase.Amount)
+                    end
+
+                    local shopItem = createShopItem(formattedAmount .. " Shards", {
+                        Description = "Purchase " .. formattedAmount .. " shards",
+                        RobuxPrice = purchase.Price,
+                    })
+                    addItemToShopUI(shopItem, content)
+                    itemCount += 1
+                end
+            end
+        end
+
+        -- Consumables section
+        local consumablesSection = contentArea:FindFirstChild("Consumables")
+        if consumablesSection and AFKPointConfig.Consumables then
+            local content = consumablesSection:FindFirstChild("Content")
+            if content then
+                clearChildren(content)
+
+                for itemName, itemData in pairs(AFKPointConfig.Consumables) do
+                    local shopItem = createShopItem(itemName, itemData)
+                    addItemToShopUI(shopItem, content)
+                    itemCount += 1
+                end
+            end
+        end
+
+        -- Setup automatic scrolling for the main contentArea ScrollingFrame
+        -- This will automatically calculate CanvasSize based on all the child frames with layouts
+        MultiFrameScrollManager.setupScrollingFrame(contentArea)
 
         return itemCount > 0
     end)

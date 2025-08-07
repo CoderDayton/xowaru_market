@@ -1,4 +1,7 @@
-local Players = game:GetService("Players")
+local Players             = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
+local AFKSystemFolder     = ServerScriptService:WaitForChild("AFKSystem")
+local AFKPointEngine      = require(AFKSystemFolder:WaitForChild("AFKPointEngine"))
 
 local FriendUtils = {}
 
@@ -13,6 +16,7 @@ local function updatePlayerFriendCount(player)
 			count = count + 1
 		end
 	end
+    AFKPointEngine.RefreshPlayerMultipliers(player)
 	friendCountCache[userId] = count
 end
 
