@@ -3,6 +3,8 @@ local RemoteSignal = require(ReplicatedStorage:WaitForChild("RemoteSignal"))
 local UIController = require(ReplicatedStorage:WaitForChild("UIController"))
 local ShopUIPopulator = require(ReplicatedStorage:WaitForChild("AFKSystem").ShopUIPopulator)
 local SoundHandler = require(ReplicatedStorage:WaitForChild("SoundHandler"))
+local SoftShadow = require(ReplicatedStorage:WaitForChild("Utils").SoftShadow)
+local StyleGuide = require(ReplicatedStorage:WaitForChild("Shared").StyleGuide)
 
 local ShopUI = script.Parent
 local MainPanel = ShopUI:WaitForChild("MainPanel")
@@ -22,7 +24,27 @@ local shopBindings = {
 local shopController = UIController.new(ShopUI, shopBindings, {
     defaultSound = "ButtonSound",
     gamepadEnabled = true,
-    onEnable = function() return end,
+    onEnable = function()
+        local mainPanel = ShopUI:FindFirstChild("MainPanel")
+        local contentArea = mainPanel:FindFirstChild("ContentArea")
+        if mainPanel then
+            SoftShadow.apply(mainPanel, {
+                SizeScale = 2,
+                Opacity = 0.5,
+                Color = Color3.fromRGB(0, 0, 0),
+                Position = "Outside",
+            })
+        end
+
+        if contentArea then
+            SoftShadow.apply(contentArea, {
+                SizeScale = 1.5,
+                Opacity = 0.5,
+                Color = StyleGuide.Colors.Glow5,
+                Position = "Inside"
+            })
+        end
+    end,
     onDisable = function() return end
 })
 
