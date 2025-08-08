@@ -1,24 +1,21 @@
---[[ 
-  Maid.lua
-  Enhanced utility for cleaning up resources for better memory.
+--[[
+    Maid.lua
+    Enhanced utility for cleaning up resources for better memory.
 
-  --
-  
-  License: MIT License
-  See LICENSE file in the repository root for full license text.
+    --
+
+    License: MIT License
+    See LICENSE file in the repository root for full license text.
 --]]
-
 
 local Maid = {}
 Maid.__index = Maid
-
 
 function Maid.new()
 	local self = setmetatable({}, Maid)
 	self._tasks = {}
 	return self
 end
-
 
 function Maid:GiveTask(task)
 	local n = #self._tasks + 1
@@ -32,16 +29,16 @@ function Maid:GiveTask(task)
 	end
 end
 
-
 function Maid:DoCleaningByType(type)
-	for i = 1, #self._tasks do 
-		if typeof(self._tasks[i]) ~= type then continue end 
+	for i = 1, #self._tasks do
+		if typeof(self._tasks[i]) ~= type then
+			continue
+		end
 
 		self:_doTask(self._tasks[i])
 		self._tasks[i] = nil
 	end
 end
-
 
 function Maid:DoCleaning()
 	for i = 1, #self._tasks do
@@ -50,9 +47,10 @@ function Maid:DoCleaning()
 	end
 end
 
-
 function Maid:_doTask(task)
-	if not task then return end
+	if not task then
+		return
+	end
 
 	local taskType = typeof(task)
 
@@ -77,11 +75,10 @@ function Maid:_doTask(task)
 	end
 end
 
-
 return Maid :: {
-	new : () -> {
-		GiveTask : (self: any, task: any) -> (),
-		DoCleaningByType : () -> (),
-		DoCleaning : () -> ()
-	}
+	new: () -> {
+		GiveTask: (self: any, task: any) -> (),
+		DoCleaningByType: () -> (),
+		DoCleaning: () -> (),
+	},
 }

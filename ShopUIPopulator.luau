@@ -42,7 +42,8 @@ local function addItemToShopUI(shopItem, parent)
 	productCard.PurchaseButton.Price.Text = tostring(shopItem.Price)
 	productCard.Icon.Image = shopItem.Icon
 	productCard.UIGradient.Color = shopItem.Color
-    productCard.BackgroundColor3 = StyleGuide.Colors.Elevation1
+    -- productCard.BackgroundColor3 = StyleGuide.Colors.Elevation1
+    productCard.Title.FontFace = StyleGuide.Typography.Header
 	productCard.Parent = parent
 end
 
