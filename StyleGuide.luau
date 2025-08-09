@@ -66,9 +66,6 @@ StyleGuide.ScaleFuncs = { X = X, Y = Y }
 
 -- ===== Scale Tokens =====
 StyleGuide.Scale = {
-	CornerSmall  = UDim.new(X(4), 0),
-	CornerLarge  = UDim.new(X(12), 0),
-	CardSize     = UDim2.fromScale(0.48, 0.3),
 }
 
 -- ===== Spacing =====

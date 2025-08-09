@@ -70,6 +70,10 @@ end
 
 -- Animation setup ----------------------------------------------------------
 
+-- Store initial MainPanel properties for animation reference
+local originalPosition = MainPanel.Position
+local originalBackgroundTransparency = MainPanel.BackgroundTransparency
+
 local OPEN_ANIMATION = {
     Duration = 0.35,
     EasingStyle = Enum.EasingStyle.Quint,
@@ -80,6 +84,9 @@ local OPEN_ANIMATION = {
     TargetPosition = UDim2.fromScale(0.5, 0.5),
     CameraDelta = 10,
     onBeforeOpen = function()
+        MainPanel.BackgroundTransparency = 1
+        MainPanel.Position = UDim2.fromScale(0.5, 1.2)
+
         ensureShadows()
         setShadowsVisible(true)
         SetupButtonsLocal:FireLocal(ShopUI)
@@ -97,6 +104,9 @@ local CLOSE_ANIMATION = {
     onAfterClose = function()
         setShadowsVisible(false)
         ShopUI.Enabled = false
+
+        MainPanel.BackgroundTransparency = originalBackgroundTransparency
+        MainPanel.Position = originalPosition
     end,
 }
 

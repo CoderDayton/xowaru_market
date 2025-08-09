@@ -10,62 +10,62 @@ local SetupButtonsLocal = RemoteSignal.new("SetupButtonsLocal")
 -- Define bindings for all buttons in the MainHUD
 local mainHUDBindings = {
     {
-        button = "Left.ShopButton",
+        button = "MainPanel.Left.ShopButton",
         handler = function()
             local ShopUI = MainHUD.Parent:WaitForChild("ShopUI")
             ShopUI.Enabled = true
         end
     },
     {
-        button = "Left.DailysButton",
+        button = "MainPanel.Left.DailysButton",
         handler = function()
             -- TODO: Implement DailysButton functionality
             print("Clicked DailysButton")
         end
     },
     {
-        button = "Left.InventoryButton",
+        button = "MainPanel.Left.InventoryButton",
         handler = function()
             -- TODO: Implement InventoryButton functionality
             print("Clicked InventoryButton")
         end
     },
     {
-        button = "Left.RebirthButton",
+        button = "MainPanel.Left.RebirthButton",
         handler = function()
             -- TODO: Implement RebirthButton functionality
             print("Clicked RebirthButton")
         end
     },
     {
-        button = "Left.CodesButton",
+        button = "MainPanel.Left.CodesButton",
         handler = function()
             -- TODO: Implement CodesButton functionality
             print("Clicked CodesButton")
         end
     },
     {
-        button = "Left.VIPButton",
+        button = "MainPanel.Left.VIPButton",
         handler = function()
             -- TODO: Implement VIPButton functionality
             print("Clicked VIPButton")
         end
     },
     {
-        button = "Right.AutoClickerButton",
+        button = "MainPanel.Right.AutoClickerButton",
         handler = function()
             AutoClickerToggle:FireLocal()
         end
     },
     {
-        button = "Right.HideUIButton",
+        button = "MainPanel.Right.SettingsButton",
         handler = function()
-            -- TODO: Implement HideUIButton functionality
-            print("Clicked HideUIButton")
+            -- TODO: Implement SettingsButton functionality
+            print("Clicked SettingsButton")
         end
     },
     {
-        button = "MainClickButton",
+        button = "MainPanel.MainClickButton",
         handler = function() return end
     }
 }

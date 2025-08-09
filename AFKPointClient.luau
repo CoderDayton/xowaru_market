@@ -3,7 +3,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local RemoteSignal = require(ReplicatedStorage.RemoteSignal)
-local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD")
+local MainHUD = game.Players.LocalPlayer.PlayerGui:WaitForChild("MainHUD"):WaitForChild("MainPanel")
 local SoundHandler = require(ReplicatedStorage:WaitForChild("SoundHandler"))
 local UIUtils = require(ReplicatedStorage:WaitForChild("UIUtils"))
 
