@@ -166,11 +166,6 @@ function UIController:registerAllButtons()
         self:registerButton(binding)
     end
 
-    -- Select first button if any exist
-    if #self.buttonsList > 0 then
-        self:selectButton(1)
-    end
-
     return self
 end
 

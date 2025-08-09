@@ -50,6 +50,9 @@ end
 function ShopUIPopulator.PopulateShopUI()
     local success, result = pcall(function()
         local panel = ShopUI.MainPanel
+        if not panel then
+            error("MainPanel.ScaleHolder not found")
+        end
         local contentArea = panel:FindFirstChild("ContentArea")
         if not contentArea then
             error("ContentArea container not found")

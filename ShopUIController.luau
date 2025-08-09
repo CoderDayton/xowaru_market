@@ -5,103 +5,209 @@ local ShopUIPopulator = require(ReplicatedStorage:WaitForChild("AFKSystem").Shop
 local SoundHandler = require(ReplicatedStorage:WaitForChild("SoundHandler"))
 local SoftShadow = require(ReplicatedStorage:WaitForChild("Utils").SoftShadow)
 local StyleGuide = require(ReplicatedStorage:WaitForChild("Shared").StyleGuide)
+local UIAnimator = require(ReplicatedStorage.Shared.UIAnimator)
 
-local ShopUI = script.Parent
-local MainPanel = ShopUI:WaitForChild("MainPanel")
+local ShopUI: ScreenGui = script.Parent
+local MainPanel: GuiObject = ShopUI:WaitForChild("MainPanel")
 
 local SetupButtonsLocal = RemoteSignal.new("SetupButtonsLocal")
 
-local shopBindings = {
-    {
-        button = "MainPanel.CloseButton",
-        handler = function()
-            ShopUI.Enabled = false
-        end
-    }
+-- Shadow management ----------------------------------------------------------
+local hasShadows = false
+local DROP_ID = "Drop"
+local GLOW_ID = "BottomGlow"
+
+local function getOutsideShadow(): ImageLabel?
+	-- Expect a sibling named "SoftShadow_<id>"
+	return MainPanel.Parent and MainPanel.Parent:FindFirstChild("SoftShadow_" .. DROP_ID) :: ImageLabel
+end
+
+local function getInsideShadow(): ImageLabel?
+	return MainPanel:FindFirstChild("SoftShadow_" .. GLOW_ID) :: ImageLabel
+end
+
+local function setShadowsVisible(visible: boolean)
+	-- Outside
+	local drop = getOutsideShadow()
+	if drop then
+		drop.Visible = visible
+	end
+	-- Inside
+	local glow = getInsideShadow()
+	if glow then
+		glow.Visible = visible
+	end
+end
+
+local function ensureShadows()
+	if hasShadows then
+		return
+	end
+	hasShadows = true
+
+	-- Outside drop shadow (sibling, behind panel)
+	SoftShadow.apply(MainPanel, {
+		Id = DROP_ID,
+		Location = "Outside",
+		Color = Color3.fromRGB(0, 0, 0),
+		Opacity = 0.45,
+		SizeScale = 1.6,
+		ZIndex = MainPanel.ZIndex - 1,
+	})
+
+	-- Inside bottom glow (child; respects ClipsDescendants)
+	SoftShadow.apply(MainPanel, {
+		Id = GLOW_ID,
+		Location = "Inside",
+		AnchorPoint = Vector2.new(0.5, 0.5), -- centered texture
+		Position = UDim2.fromScale(0.5, 1.25), -- extends below; clipped by panel
+		Color = StyleGuide.Colors.Glow,
+		Opacity = 0.15,
+		SizeScale = 1.75,
+		ZIndex = MainPanel.ZIndex, -- above panel background
+	})
+end
+
+-- Animation setup ----------------------------------------------------------
+
+local OPEN_ANIMATION = {
+    Duration = 0.35,
+    EasingStyle = Enum.EasingStyle.Quint,
+    EasingDirection = Enum.EasingDirection.Out,
+    ScaleFrom = 0.85,
+    FadeFrom = 0.85,
+    MoveFrom = UDim2.fromScale(0.5, 1.2),
+    TargetPosition = UDim2.fromScale(0.5, 0.5),
+    CameraDelta = 10,
+    onBeforeOpen = function()
+        ensureShadows()
+        setShadowsVisible(true)
+        SetupButtonsLocal:FireLocal(ShopUI)
+    end,
 }
 
--- Create shop controller with configuration
-local shopController = UIController.new(ShopUI, shopBindings, {
-    defaultSound = "ButtonSound",
-    gamepadEnabled = true,
-    onEnable = function()
-        local mainPanel = ShopUI:FindFirstChild("MainPanel")
-        local contentArea = mainPanel:FindFirstChild("ContentArea")
-        if mainPanel then
-            SoftShadow.apply(mainPanel, {
-                SizeScale = 2,
-                Opacity = 0.5,
-                Color = Color3.fromRGB(0, 0, 0),
-                Position = "Outside",
-            })
-        end
-
-        if contentArea then
-            SoftShadow.apply(contentArea, {
-                SizeScale = 1.5,
-                Opacity = 0.5,
-                Color = StyleGuide.Colors.Glow5,
-                Position = "Inside"
-            })
-        end
+local CLOSE_ANIMATION = {
+    Duration = 0.25,
+    EasingStyle = Enum.EasingStyle.Quint,
+    EasingDirection = Enum.EasingDirection.In,
+    ScaleTo = 0.85,
+    FadeTo = 1,
+    TargetPosition = UDim2.fromScale(0.5, 1.2),
+    CameraDelta = 10,
+    onAfterClose = function()
+        setShadowsVisible(false)
+        ShopUI.Enabled = false
     end,
-    onDisable = function() return end
+}
+
+-- ---------------------------------------------------------------------------
+
+-- Close via animation (don’t remove shadows; just hide in onDisable)
+local shopBindings = {
+	{
+		button = "CloseButton",
+		handler = function()
+			local mainPanel = ShopUI:FindFirstChild("MainPanel")
+			if not mainPanel then
+				warn("[ShopUIController] MainPanel not found on disable!")
+				return
+			end
+
+			UIAnimator.close(mainPanel, CLOSE_ANIMATION)
+		end,
+	},
+}
+
+-- Controller
+local shopController = UIController.new(ShopUI, shopBindings, {
+	defaultSound = "ButtonSound",
+	gamepadEnabled = true,
+
+	onEnable = function()
+		local mainPanel = ShopUI:FindFirstChild("MainPanel")
+		if not mainPanel then
+			warn("[ShopUIController] MainPanel or ContentArea not found!")
+			return
+		end
+
+		UIAnimator.open(mainPanel, OPEN_ANIMATION)
+	end,
+
+	onDisable = function()
+	end,
 })
 
--- Function to register product buttons dynamically
+-- Register product buttons dynamically
 local function registerProductButtons()
-    local contentArea = MainPanel:FindFirstChild("ContentArea")
-    if not contentArea then return end
+	local contentArea = MainPanel:FindFirstChild("ContentArea")
+	if not contentArea then
+		return
+	end
 
-    local gamepasses = contentArea:FindFirstChild("Gamepasses")
-    local content = gamepasses:FindFirstChild("Content")
-    shopController:registerProductButtons(content, function(card, button)
-        print("[ShopUI] Purchasing " .. card.Title.Text)
-        SoundHandler.PlaySound("ButtonSound")
-    end)
+	-- Gamepasses
+	do
+		local group = contentArea:FindFirstChild("Gamepasses")
+		local content = group and group:FindFirstChild("Content")
+		if content then
+			shopController:registerProductButtons(content, function(card, _button)
+				print("[ShopUI] Purchasing " .. card.Title.Text)
+				SoundHandler.PlaySound("ButtonSound")
+			end)
+		end
+	end
 
-    local shards = contentArea:FindFirstChild("Shards")
-    content = shards:FindFirstChild("Content")
-    shopController:registerProductButtons(content, function(card, button)
-        print("[ShopUI] Purchasing " .. card.Title.Text)
-        SoundHandler.PlaySound("ButtonSound")
-    end)
+	-- Shards
+	do
+		local group = contentArea:FindFirstChild("Shards")
+		local content = group and group:FindFirstChild("Content")
+		if content then
+			shopController:registerProductButtons(content, function(card, _button)
+				print("[ShopUI] Purchasing " .. card.Title.Text)
+				SoundHandler.PlaySound("ButtonSound")
+			end)
+		end
+	end
 
-    local consumables = contentArea:FindFirstChild("Consumables")
-    content = consumables:FindFirstChild("Content")
-    shopController:registerProductButtons(content, function(card, button)
-        print("[ShopUI] Purchasing " .. card.Title.Text)
-        SoundHandler.PlaySound("ButtonSound")
-    end)
+	-- Consumables
+	do
+		local group = contentArea:FindFirstChild("Consumables")
+		local content = group and group:FindFirstChild("Content")
+		if content then
+			shopController:registerProductButtons(content, function(card, _button)
+				print("[ShopUI] Purchasing " .. card.Title.Text)
+				SoundHandler.PlaySound("ButtonSound")
+			end)
+		end
+	end
 
-    print("[ShopUIController] Registered " .. #shopController.buttonsList - 1 .. " product buttons")
+	print("[ShopUIController] Registered " .. tostring(#shopController.buttonsList - 1) .. " product buttons")
 end
 
--- Initialize the controller
-local function init()
-    -- Clear existing button registry and populate shop UI
-    local success = ShopUIPopulator.PopulateShopUI()
-    if not success then
-        warn("[ShopUIController] Failed to populate shop UI.")
-        return
-    end
-
-    SetupButtonsLocal:FireLocal(ShopUI)
-
-    shopController:initialize()
-
-    registerProductButtons()
-
-    print("[ShopUIController] Initialized with " .. #shopController.buttonsList .. " buttons.")
-end
-
--- Initialize when script loads
-init()
-
--- Re-initialize when shop UI is shown
+-- Populate + bind on enable (single source of truth)
 ShopUI:GetPropertyChangedSignal("Enabled"):Connect(function()
-    if ShopUI.Enabled then
-        init()
+	if ShopUI.Enabled then
+		local ok = ShopUIPopulator.PopulateShopUI()
+		if not ok then
+			warn("[ShopUIController] Failed to populate shop UI.")
+			return
+		end
+		shopController:initialize()
+		registerProductButtons()
+	end
+end)
+
+-- Optional: initial init if ShopUI starts enabled in Studio
+if ShopUI.Enabled then
+	local ok = ShopUIPopulator.PopulateShopUI()
+	if ok then
+		shopController:initialize()
+		registerProductButtons()
+	end
+end
+
+game.Players.PlayerRemoving:Connect(function(player)
+    if player == game.Players.LocalPlayer then
+        UIAnimator.cleanupAll()
     end
 end)
 

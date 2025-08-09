@@ -196,7 +196,7 @@ end
 -- Public API: Top spenders
 function LeaderboardData.GetTopSpenders(limit: number?)
     local lim = tonumber(limit) or MAX_RECENT
-    lim = math.max(1, math.min(lim, 100))
+    lim = math.clamp(lim, 1, 100) -- limit to 100 for performance
     local ok, pages = pcall(function()
         return TOP_SPENDERS_DS:GetSortedAsync(false, lim)
     end)
