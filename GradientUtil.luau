@@ -29,6 +29,7 @@ export type GradientConfig = {
 	shadow: boolean?, -- default true
 	shadowSize: number?,
 	shadowOpacity: number?,
+    shadowFamily: string?,
 	stroke: boolean?, -- default true
 }
 
@@ -115,13 +116,14 @@ function GradientUtil.apply(target: GuiObject, cfg: GradientConfig?): GradientCo
 	local shadowId: string? = nil
 	if cfg.shadow ~= false then
 		local sp = StyleGuide.Shadow.SoftShadowPresets[family] or StyleGuide.Shadow.SoftShadowPresets.CTA
+        local sc = StyleGuide.Shadow.SoftShadowPresets[cfg.shadowFamily] or StyleGuide.Shadow.SoftShadowPresets.CTA
 		shadowId = ("GU_SH_%s_%d"):format(family, tick() * 1000 % 1e6)
 		SoftShadow.apply(target, {
 			Id = shadowId,
 			Location = sp.Location,
 			SizeScale = cfg.shadowSize or sp.SizeScale,
 			Opacity = cfg.shadowOpacity or sp.Opacity,
-			Color = sp.Color,
+			Color = sc.Color,
 		})
 	end
 	if cfg.stroke ~= false then

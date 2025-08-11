@@ -78,6 +78,8 @@ local mainController = UIController.new(MainHUD, mainHUDBindings, {
     onEnable = function()
         -- Any additional setup when the HUD is enabled
         SetupButtonsLocal:FireLocal(MainHUD)
+
+        MainHUD.Enabled = false
     end
 })
 

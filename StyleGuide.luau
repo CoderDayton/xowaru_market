@@ -4,11 +4,20 @@ StyleGuide.luau - Optimized with cached sequences and validation
 
 -- Types (unchanged but cleaner)
 export type ColorSet = {
-	SURFACE_Primary: Color3, SURFACE_Elevation1: Color3, SURFACE_Elevation2: Color3,
-	TEXT_Primary: Color3, TEXT_Secondary: Color3, TEXT_Inverse: Color3,
-	ACCENT_Primary: Color3, ACCENT_Secondary: Color3,
-	STATE_Success: Color3, STATE_Warning: Color3, STATE_Danger: Color3,
-	BORDER_Subtle: Color3, BORDER_Strong: Color3, FOCUS: Color3,
+	SURFACE_Primary: Color3,
+	SURFACE_Elevation1: Color3,
+	SURFACE_Elevation2: Color3,
+	TEXT_Primary: Color3,
+	TEXT_Secondary: Color3,
+	TEXT_Inverse: Color3,
+	ACCENT_Primary: Color3,
+	ACCENT_Secondary: Color3,
+	STATE_Success: Color3,
+	STATE_Warning: Color3,
+	STATE_Danger: Color3,
+	BORDER_Subtle: Color3,
+	BORDER_Strong: Color3,
+	FOCUS: Color3,
 }
 
 export type Gradients = {
@@ -80,8 +89,12 @@ StyleGuide.Spacing = {
 -- Scale helpers
 local REF_X, REF_Y = 1280, 720
 StyleGuide.ScaleFuncs = {
-	X = function(px: number) return px / REF_X end,
-	Y = function(py: number) return py / REF_Y end,
+	X = function(px: number)
+		return px / REF_X
+	end,
+	Y = function(py: number)
+		return py / REF_Y
+	end,
 }
 StyleGuide.Scale = { ButtonHeight = 56, HeaderHeight = 64 }
 
@@ -89,8 +102,8 @@ StyleGuide.Scale = { ButtonHeight = 56, HeaderHeight = 64 }
 StyleGuide.Shadow = {
 	SoftShadow = { Blur = 24, Size = 0, Opacity = 0.25 },
 	SoftShadowPresets = {
-		PanelInside = { Location = "Inside", SizeScale = 1.00, Opacity = 0.20, Color = Color3.fromRGB(0,0,0) },
-		PanelOutside = { Location = "Outside", SizeScale = 1.20, Opacity = 0.30, Color = Color3.fromRGB(0,0,0) },
+		PanelInside = { Location = "Inside", SizeScale = 1.00, Opacity = 0.20, Color = Color3.fromRGB(0, 0, 0) },
+		PanelOutside = { Location = "Outside", SizeScale = 1.20, Opacity = 0.30, Color = Color3.fromRGB(0, 0, 0) },
 		CTA = { Location = "Outside", SizeScale = 1.30, Opacity = 0.40, Color = Color3.fromRGB(0, 200, 255) },
 		Purple = { Location = "Outside", SizeScale = 1.25, Opacity = 0.36, Color = Color3.fromRGB(128, 64, 255) },
 		Red = { Location = "Outside", SizeScale = 1.25, Opacity = 0.36, Color = Color3.fromRGB(255, 96, 72) },
@@ -99,7 +112,19 @@ StyleGuide.Shadow = {
 		Tan = { Location = "Outside", SizeScale = 1.20, Opacity = 0.30, Color = Color3.fromRGB(199, 167, 120) },
 		Orange = { Location = "Outside", SizeScale = 1.25, Opacity = 0.36, Color = Color3.fromRGB(255, 140, 20) },
 		Gold = { Location = "Outside", SizeScale = 1.25, Opacity = 0.36, Color = Color3.fromRGB(255, 210, 80) },
-	}
+		CyanGlow = { Location = "Outside", SizeScale = 1.30, Opacity = 0.42, Color = Color3.fromRGB(0, 225, 255) },
+		MagentaGlow = { Location = "Outside", SizeScale = 1.28, Opacity = 0.40, Color = Color3.fromRGB(247, 39, 152) }, -- #F72798[12]
+		ElectricBlue = { Location = "Outside", SizeScale = 1.26, Opacity = 0.38, Color = Color3.fromRGB(0, 120, 255) },
+		Lime = { Location = "Outside", SizeScale = 1.24, Opacity = 0.36, Color = Color3.fromRGB(150, 255, 60) },
+		Rose = { Location = "Outside", SizeScale = 1.22, Opacity = 0.34, Color = Color3.fromRGB(255, 90, 130) },
+		Amber = { Location = "Outside", SizeScale = 1.24, Opacity = 0.35, Color = Color3.fromRGB(255, 185, 30) },
+		TealDeep = { Location = "Outside", SizeScale = 1.18, Opacity = 0.28, Color = Color3.fromRGB(14, 120, 120) },
+		Indigo = { Location = "Outside", SizeScale = 1.20, Opacity = 0.30, Color = Color3.fromRGB(70, 80, 160) },
+		BlackSoft = { Location = "Outside", SizeScale = 1.18, Opacity = 0.26, Color = Color3.fromRGB(0, 0, 0) },
+		WhiteLift = { Location = "Inside", SizeScale = 1.10, Opacity = 0.20, Color = Color3.fromRGB(255, 255, 255) },
+		OutlineHigh = { Location = "Outside", SizeScale = 1.06, Opacity = 0.48, Color = Color3.fromRGB(0, 0, 0) }, -- for focus ring depth[10][16][13]
+		Danger = { Location = "Outside", SizeScale = 1.16, Opacity = 0.34, Color = Color3.fromRGB(230, 40, 30) },
+	},
 }
 
 -- OPTIMIZED: Pre-built gradient sequences (cached for performance)
@@ -120,8 +145,10 @@ StyleGuide.Gradients = {
 		Rotation = 90,
 	},
 	SheenBand = NumberSequence.new({
-		NumberSequenceKeypoint.new(0.00, 1), NumberSequenceKeypoint.new(0.45, 1),
-		NumberSequenceKeypoint.new(0.50, 0), NumberSequenceKeypoint.new(0.55, 1),
+		NumberSequenceKeypoint.new(0.00, 1),
+		NumberSequenceKeypoint.new(0.45, 1),
+		NumberSequenceKeypoint.new(0.50, 0),
+		NumberSequenceKeypoint.new(0.55, 1),
 		NumberSequenceKeypoint.new(1.00, 1),
 	}),
 	Purple = {
@@ -180,22 +207,214 @@ StyleGuide.Gradients = {
 		}),
 		Rotation = 20,
 	},
+	-- Neon Cyan → Magenta “CyberPulse”
+	CyberPulse = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 229, 255)),
+			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(120, 0, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(247, 39, 152)),
+		}),
+		Rotation = 18,
+	},
+
+	-- Electric Blue → Violet “HyperDrive”
+	HyperDrive = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 149, 255)),
+			ColorSequenceKeypoint.new(0.60, Color3.fromRGB(79, 70, 229)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(128, 64, 255)),
+		}),
+		Rotation = 40,
+	},
+
+	-- Lime → Amber “Voltage”
+	Voltage = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(150, 255, 60)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(255, 210, 80)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 138, 0)),
+		}),
+		Rotation = 28,
+	},
+
+	-- Rose → Orange → Gold “HeatWave”
+	HeatWave = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 90, 130)),
+			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 94, 0)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 179, 0)),
+		}),
+		Rotation = 22,
+	},
+
+	-- Teal → Indigo “DeepSea”
+	DeepSea = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(14, 120, 120)),
+			ColorSequenceKeypoint.new(0.60, Color3.fromRGB(70, 80, 160)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 38, 46)),
+		}),
+		Rotation = 95,
+	},
+
+	-- Silver Sheen (cool metallic)
+	SilverSheen = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(245, 248, 255)),
+			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(200, 210, 225)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(160, 170, 185)),
+		}),
+		Rotation = 12,
+	},
+
+	-- Toxic Green → Cyan “Biohazard”
+	Biohazard = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 255, 170)),
+			ColorSequenceKeypoint.new(0.48, Color3.fromRGB(0, 225, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 149, 255)),
+		}),
+		Rotation = 33,
+	},
+
+	-- Sunset Purple → Rose “Nectar”
+	Nectar = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(168, 92, 255)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(247, 39, 152)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 140, 20)),
+		}),
+		Rotation = 35,
+	},
+
+	-- Gunmetal → Blue “CarbonIce”
+	CarbonIce = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(44, 48, 54)),
+			ColorSequenceKeypoint.new(0.60, Color3.fromRGB(66, 70, 78)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 120, 255)),
+		}),
+		Rotation = 0,
+	},
+
+	-- Sand → Gold “Gilded”
+	Gilded = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(214, 191, 165)),
+			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 201, 77)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 179, 0)),
+		}),
+		Rotation = 16,
+	},
+
+	-- Dark panel glow (subtle UI background)
+	AbyssGlow = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(16, 18, 22)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(24, 28, 34)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 36, 44)),
+		}),
+		Rotation = 90,
+	},
+
+	-- Rainbow loop (clean banding-conscious spacing)
+	Rainbow = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 85)),
+			ColorSequenceKeypoint.new(0.20, Color3.fromRGB(255, 140, 0)),
+			ColorSequenceKeypoint.new(0.40, Color3.fromRGB(255, 255, 0)),
+			ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 255, 120)),
+			ColorSequenceKeypoint.new(0.80, Color3.fromRGB(0, 149, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(170, 0, 255)),
+		}),
+		Rotation = 0,
+	},
+
+	-- Hot Magenta → Blue “CandyGlass”
+	CandyGlass = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(247, 39, 152)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(128, 64, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 149, 255)),
+		}),
+		Rotation = 24,
+	},
+
+	-- Emerald → Teal “Seaglass”
+	Seaglass = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(52, 211, 153)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(16, 185, 129)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(14, 120, 120)),
+		}),
+		Rotation = 30,
+	},
+
+	-- Peach → Gold “HoneyDrip”
+	HoneyDrip = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 176, 120)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(255, 201, 77)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 179, 0)),
+		}),
+		Rotation = 12,
+	},
+
+	-- Frosted Blue → White “Glacier”
+	Glacier = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 149, 255)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(120, 190, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(245, 248, 255)),
+		}),
+		Rotation = 75,
+	},
+
+	-- Infrared Danger “IRis”
+	IRis = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 65, 108)),
+			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 75, 43)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 210, 80)),
+		}),
+		Rotation = 18,
+	},
+
+	-- Midnight Blue → Cyan edge “EdgeLight”
+	EdgeLight = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(10, 80, 255)),
+			ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 149, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 229, 255)),
+		}),
+		Rotation = 8,
+	},
+
+	-- Purple haze overlay “Nebula”
+	Nebula = {
+		Colors = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(90, 70, 200)),
+			ColorSequenceKeypoint.new(0.55, Color3.fromRGB(128, 64, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(247, 39, 152)),
+		}),
+		Rotation = 42,
+	},
 } :: Gradients
 
 -- Strokes
 StyleGuide.Stroke = {
-	Subtle = { Thickness = 1, Transparency = 0.35, Color = Color3.fromRGB(255,255,255) },
-	Strong = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(0,0,0) },
+	Subtle = { Thickness = 1, Transparency = 0.35, Color = Color3.fromRGB(255, 255, 255) },
+	Strong = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(0, 0, 0) },
 	Focus = { Thickness = 2, Transparency = 0.0, Color = StyleGuide.Colors.FOCUS },
 	Presets = {
-		CTA = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(255,255,255) },
-		Purple = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(255,255,255) },
-		Red = { Thickness = 1, Transparency = 0.18, Color = Color3.fromRGB(255,255,255) },
-		Grey = { Thickness = 1, Transparency = 0.30, Color = Color3.fromRGB(255,255,255) },
-		Green = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(255,255,255) },
-		Tan = { Thickness = 1, Transparency = 0.25, Color = Color3.fromRGB(0,0,0) },
-		Orange = { Thickness = 1, Transparency = 0.22, Color = Color3.fromRGB(0,0,0) },
-		Gold = { Thickness = 1, Transparency = 0.22, Color = Color3.fromRGB(0,0,0) },
+		CTA = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(255, 255, 255) },
+		Purple = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(255, 255, 255) },
+		Red = { Thickness = 1, Transparency = 0.18, Color = Color3.fromRGB(255, 255, 255) },
+		Grey = { Thickness = 1, Transparency = 0.30, Color = Color3.fromRGB(255, 255, 255) },
+		Green = { Thickness = 1, Transparency = 0.20, Color = Color3.fromRGB(255, 255, 255) },
+		Tan = { Thickness = 1, Transparency = 0.25, Color = Color3.fromRGB(0, 0, 0) },
+		Orange = { Thickness = 1, Transparency = 0.22, Color = Color3.fromRGB(0, 0, 0) },
+		Gold = { Thickness = 1, Transparency = 0.22, Color = Color3.fromRGB(0, 0, 0) },
 	},
 }
 
