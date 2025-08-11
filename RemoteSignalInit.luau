@@ -13,6 +13,9 @@ local SIGNAL_NAMES = {
 	"ShardMinigameRequest",
 	"ShardMinigameResult",
 	"ConsumableUpdate",
+    "DailyRewardClaim",
+    "DailyRewardStatus",
+    "DailyRewardResult"
 }
 
 for _, name in ipairs(SIGNAL_NAMES) do

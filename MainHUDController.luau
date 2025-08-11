@@ -11,6 +11,7 @@ local SetupButtonsLocal = RemoteSignal.new("SetupButtonsLocal")
 local mainHUDBindings = {
     {
         button = "MainPanel.Left.ShopButton",
+        silent = true,
         handler = function()
             local ShopUI = MainHUD.Parent:WaitForChild("ShopUI")
             ShopUI.Enabled = true

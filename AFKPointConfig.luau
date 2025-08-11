@@ -1,4 +1,11 @@
 local AFKPointConfig = {
+    -- Database keys and configuration
+    DataStoreKey = "AFKShards",
+	UpgradeKey = "AFKShardUpgrades",
+	ConsumableKey = "AFKShardConsumables",
+	DailyStreakKey = "AFKDailyStreak",
+
+    -- General configuration
 	ShardInterval = 1,      -- seconds between shard awards
 	BaseShards = 1,         -- base shards per interval
 	MaxClicksPerSecond = 5, -- Prevents autoclicking exploits (set to whatever feels fair)
@@ -83,7 +90,6 @@ local AFKPointConfig = {
 		}
 	},
 
-	-- Only show boosts here that are NOT shop unlocks and DO show up in the Boosts UI:
 	Boosts = {
 		["Friend Invite"] = {
 			Description = "For each friend in-game, get +10% shards (max 50%).",
@@ -161,7 +167,6 @@ local AFKPointConfig = {
 		},
 	},
 
-    -- ShardPurchases: Price is in Robux
     ShardPurchases = {
         {
             Amount = 250000,
@@ -230,10 +235,28 @@ local AFKPointConfig = {
 		{Name = "Legendary", Requirement = {Type = "Claims", Amount = 25}},
 	},
 
-	DataStoreKey = "AFKShards",
-	UpgradeKey = "AFKShardUpgrades",
-	ConsumableKey = "AFKShardConsumables",
-	DailyStreakKey = "AFKDailyStreak",
+    FirstPurchaseBonus = {
+        Enabled = true,
+        AppliesTo = { "DevProduct", "Gamepass" },
+        Shards = {
+            Multiplier = 2.0,
+            MinProductIds = {}, -- empty means applies to all shard packs
+        },
+        Gamepasses = {
+            Shards = 50000,
+            Consumables = {
+                ["x2 Shards 15m"] = 2,
+            },
+        },
+        Cosmetics = {
+            Title = "Investor", BadeId = 123456789,
+        },
+        Eligibility = {
+            IgnoreIfHasSpentBefore = true, -- If player has spent any Robux before, they are not eligible
+            NewUserGraceHours = 72, -- New users have 72 hours to make their first purchase
+        },
+    }
+
 }
 
 return AFKPointConfig

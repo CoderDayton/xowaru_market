@@ -28,7 +28,8 @@ function UIController.new(screenGui, bindings, config)
         selectedScale = 1.1,
         normalScale = 1,
         touchTolerance = 5, -- Pixels
-        gamepadEnabled = true
+        gamepadEnabled = true,
+        playSoundWhenNoButton = false
     }
 
     -- State tracking
@@ -81,7 +82,7 @@ function UIController:registerButton(buttonInfo)
 
     -- Mouse click (PC)
     local mouseConn = button.MouseButton1Click:Connect(function()
-        if self.config.defaultSound then
+        if self.config.defaultSound and not buttonInfo.silent then
             SoundHandler.PlaySound(self.config.defaultSound)
         end
         buttonInfo.handler(button)
@@ -121,7 +122,7 @@ function UIController:registerButton(buttonInfo)
                touchPos.Y >= buttonPos.Y - tolerance and
                touchPos.Y <= buttonPos.Y + buttonSize.Y + tolerance then
 
-                if self.config.defaultSound then
+                if self.config.defaultSound and not buttonInfo.silent then
                     SoundHandler.PlaySound(self.config.defaultSound)
                 end
                 buttonInfo.handler(button)
@@ -143,7 +144,7 @@ function UIController:handleButtonPress(button, isGamepad)
     if not self.buttonRegistry[button] then return end
 
     -- Play sound if configured
-    if self.config.defaultSound then
+    if self.config.defaultSound and not self.config.playSoundWhenNoButton then
         SoundHandler.PlaySound(self.config.defaultSound)
     end
 

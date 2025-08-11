@@ -75,39 +75,44 @@ local originalPosition = MainPanel.Position
 local originalBackgroundTransparency = MainPanel.BackgroundTransparency
 
 local OPEN_ANIMATION = {
-    Duration = 0.35,
-    EasingStyle = Enum.EasingStyle.Quint,
-    EasingDirection = Enum.EasingDirection.Out,
-    ScaleFrom = 0.85,
-    FadeFrom = 0.85,
-    MoveFrom = UDim2.fromScale(0.5, 1.2),
-    TargetPosition = UDim2.fromScale(0.5, 0.5),
-    CameraDelta = 10,
-    onBeforeOpen = function()
-        MainPanel.BackgroundTransparency = 1
-        MainPanel.Position = UDim2.fromScale(0.5, 1.2)
+	Duration = 0.35,
+	EasingStyle = Enum.EasingStyle.Quint,
+	EasingDirection = Enum.EasingDirection.Out,
+	ScaleFrom = 0.85,
+	FadeFrom = 0.85,
+	MoveFrom = UDim2.fromScale(0.5, 1.2),
+	TargetPosition = UDim2.fromScale(0.5, 0.5),
+	CameraDelta = 10,
+	onBeforeOpen = function()
+		MainPanel.BackgroundTransparency = 1
+		MainPanel.Position = UDim2.fromScale(0.5, 1.2)
 
-        ensureShadows()
-        setShadowsVisible(true)
-        SetupButtonsLocal:FireLocal(ShopUI)
-    end,
+		ensureShadows()
+		setShadowsVisible(true)
+		SetupButtonsLocal:FireLocal(ShopUI)
+
+		SoundHandler.PlaySound("MenuOpen")
+	end,
 }
 
 local CLOSE_ANIMATION = {
-    Duration = 0.25,
-    EasingStyle = Enum.EasingStyle.Quint,
-    EasingDirection = Enum.EasingDirection.In,
-    ScaleTo = 0.85,
-    FadeTo = 1,
-    TargetPosition = UDim2.fromScale(0.5, 1.2),
-    CameraDelta = 10,
-    onAfterClose = function()
-        setShadowsVisible(false)
-        ShopUI.Enabled = false
+	Duration = 0.25,
+	EasingStyle = Enum.EasingStyle.Quint,
+	EasingDirection = Enum.EasingDirection.In,
+	ScaleTo = 0.85,
+	FadeTo = 1,
+	TargetPosition = UDim2.fromScale(0.5, 1.2),
+	CameraDelta = 10,
+	onAfterClose = function()
+		setShadowsVisible(false)
+		ShopUI.Enabled = false
 
-        MainPanel.BackgroundTransparency = originalBackgroundTransparency
-        MainPanel.Position = originalPosition
-    end,
+		MainPanel.BackgroundTransparency = originalBackgroundTransparency
+		MainPanel.Position = originalPosition
+	end,
+	onBeforeClose = function()
+		SoundHandler.PlaySound("MenuClose")
+	end
 }
 
 -- ---------------------------------------------------------------------------
@@ -116,6 +121,7 @@ local CLOSE_ANIMATION = {
 local shopBindings = {
 	{
 		button = "CloseButton",
+        silent = true,
 		handler = function()
 			local mainPanel = ShopUI:FindFirstChild("MainPanel")
 			if not mainPanel then
@@ -216,9 +222,9 @@ if ShopUI.Enabled then
 end
 
 game.Players.PlayerRemoving:Connect(function(player)
-    if player == game.Players.LocalPlayer then
-        UIAnimator.cleanupAll()
-    end
+	if player == game.Players.LocalPlayer then
+		UIAnimator.cleanupAll()
+	end
 end)
 
 return shopController

@@ -37,12 +37,12 @@ local function createSlot(name: string, iconId: string, delayIndex: number?): Fr
 	slot.Name = name
 	slot.Size = UDim2.fromOffset(60, 64)
 	slot.BackgroundTransparency = 0
-	slot.BackgroundColor3 = StyleGuide.Colors.Elevation1
+	slot.BackgroundColor3 = StyleGuide.Colors.SURFACE_Elevation1
 	slot.ZIndex = 20
 	slot.Parent = consumableBar
 
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, StyleGuide.Spacing.CornerLarge)
+	corner.CornerRadius = UDim.new(0, StyleGuide.Spacing.Radius.M)
 	corner.Parent = slot
 
 	local UIScale = Instance.new("UIScale")
@@ -62,7 +62,7 @@ local function createSlot(name: string, iconId: string, delayIndex: number?): Fr
 	timer.Name = "Timer"
 	timer.Text = "..."
 	timer.FontFace = StyleGuide.Typography.Body
-	timer.TextColor3 = StyleGuide.Colors.Glow
+	timer.TextColor3 = StyleGuide.Glow.CTA
 	timer.BackgroundTransparency = 1
 	timer.TextSize = 20
 	timer.AnchorPoint = Vector2.new(0.5, 0)
@@ -75,7 +75,7 @@ local function createSlot(name: string, iconId: string, delayIndex: number?): Fr
 
 	local shadow = timer:Clone()
 	shadow.Name = "Shadow"
-	shadow.TextColor3 = StyleGuide.Colors.PrimarySurface
+	shadow.TextColor3 = StyleGuide.Colors.TEXT_Inverse
 	shadow.TextStrokeTransparency = 1
 	shadow.Position = timer.Position + UDim2.fromOffset(1, 2)
 	shadow.ZIndex = timer.ZIndex - 1
